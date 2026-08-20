@@ -6,14 +6,14 @@ These instructions apply to the Wealth Map workspace and are based on the comple
 
 The following files are authoritative and must be kept aligned with the implementation:
 
-- `WealthMapPRD.md`: complete product requirements, data model, calculation rules, technical requirements, acceptance criteria, roadmap, and financial disclaimer.
-- `wireframe-navigation.md`: expanded desktop navigation, collapsed mobile navigation, drawer behavior, and navigation requirements.
-- `wireframe-profile.md`: editable profile and projection-assumption layout.
-- `wireframe-assets.md`: editable account balances, tax-treatment labels, and asset totals.
-- `wireframe-income-expenses.md`: editable income, savings, expenses, surplus, and savings-rate layout.
-- `wireframe-retirement-readiness.md`: primary Retirement Health Score, timing, funding, spending, and assumptions layout.
-- `wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and prototype boundaries.
-- `Wealth_Statement.xlsx`: root-level read-only research and validation reference. It is not a runtime dependency and must never be modified.
+- `planning/WealthMapPRD.md`: complete product requirements, data model, calculation rules, technical requirements, acceptance criteria, roadmap, and financial disclaimer.
+- `planning/wireframe-navigation.md`: expanded desktop navigation, collapsed mobile navigation, drawer behavior, and navigation requirements.
+- `planning/wireframe-profile.md`: editable profile and projection-assumption layout.
+- `planning/wireframe-assets.md`: editable account balances, tax-treatment labels, and asset totals.
+- `planning/wireframe-income-expenses.md`: editable income, savings, expenses, surplus, and savings-rate layout.
+- `planning/wireframe-retirement-readiness.md`: primary Retirement Health Score, timing, funding, spending, and assumptions layout.
+- `planning/wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and prototype boundaries.
+- `planning/Wealth_Statement.xlsx`: read-only research and validation reference. It is not a runtime dependency and must never be modified.
 
 ## Product Purpose
 
@@ -56,7 +56,7 @@ All core profile, asset, income, expense, and projection-assumption fields must 
 - Use HTML5, CSS3, and modern vanilla JavaScript.
 - Keep the app static and client-side.
 - Do not add a framework, backend, database, build step, package manager, authentication, external API, or account aggregation service for P0.
-- Keep the app compatible with GitHub Pages and direct opening of `WealthApp/index.html`.
+- Keep the app compatible with GitHub Pages and direct opening of `index.html` at the repository root.
 - Keep data, calculations, rendering, navigation, and styling in understandable separate files.
 - Keep the original sample dataset immutable and maintain a separate working state.
 - Use one update flow: validate input, update working state, recalculate derived values, then render dependent views.
@@ -149,7 +149,7 @@ The Readiness view is the primary landing view. Use responsive layouts, stacked 
 
 ## Financial and Research Boundaries
 
-`Wealth_Statement.xlsx` is a read-only research artifact at the repository root. Do not load it in the browser, alter it, or treat it as a runtime dependency. P0 uses the simplified rules above. Future tax-aware work may validate documented scenarios against the workbook before implementing more detailed formulas.
+`planning/Wealth_Statement.xlsx` is a read-only research artifact. Do not load it in the browser, alter it, or treat it as a runtime dependency. P0 uses the simplified rules above. Future tax-aware work may validate documented scenarios against the workbook before implementing more detailed formulas.
 
 The prototype must clearly state that results are simplified educational estimates and not financial, tax, or legal advice.
 

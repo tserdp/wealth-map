@@ -14,7 +14,7 @@ The product is an educational decision-support tool, not a net-worth tracker or 
 
 ### Research foundation and product vision
 
-The included repository file `Wealth_Statement.xlsx` is the research foundation for the longer-term product. It is located at the project root and should be treated as a read-only reference artifact. It models retirement planning as a timeline of income, spending, account balances, taxes, Roth conversions, Social Security, and required minimum distributions (RMDs). The prototype must not reproduce that workbook's full calculation engine, but its data model and calculation layer should leave room for those capabilities.
+The included repository file `planning/Wealth_Statement.xlsx` is the research foundation for the longer-term product. It is a read-only reference artifact stored alongside the other planning documents. It models retirement planning as a timeline of income, spending, account balances, taxes, Roth conversions, Social Security, and required minimum distributions (RMDs). The prototype must not reproduce that workbook's full calculation engine, but its data model and calculation layer should leave room for those capabilities.
 
 The prototype must not require the workbook to be loaded in the browser and must not modify it. P0 calculations use the simplified rules in this PRD. Future tax-aware features may use documented workbook scenarios for validation.
 
@@ -417,7 +417,7 @@ Suggested interpretation:
 - Avoid hard-coding calculated results into page markup.
 - Handle missing, zero, and invalid numeric values without breaking the UI.
 - Include a README with local run instructions and a short explanation of the prototype assumptions.
-- Treat the root-level `Wealth_Statement.xlsx` as a read-only research and validation reference, not as a runtime dependency.
+- Treat `planning/Wealth_Statement.xlsx` as a read-only research and validation reference, not as a runtime dependency.
 
 ## 13. Expected Deliverables
 
@@ -429,12 +429,12 @@ styles.css
 app.js
 data.js             (optional)
 README.md
-wireframe-navigation.md
-wireframe-profile.md
-wireframe-assets.md
-wireframe-income-expenses.md
-wireframe-retirement-readiness.md
-wireframe-recommendations.md
+planning/wireframe-navigation.md
+planning/wireframe-profile.md
+planning/wireframe-assets.md
+planning/wireframe-income-expenses.md
+planning/wireframe-retirement-readiness.md
+planning/wireframe-recommendations.md
 ```
 
 The app may use additional files if they improve clarity, but it must remain simple to run locally by opening `index.html` or serving the folder with a basic static server.
@@ -500,7 +500,7 @@ The app may use additional files if they improve clarity, but it must remain sim
 - Create a small set of documented input scenarios and expected outputs before implementing tax-aware features.
 - Compare future tax, Roth conversion, Social Security, and RMD results against selected workbook outputs.
 - Record which workbook assumptions are supported, simplified, or intentionally excluded.
-- Keep `Wealth_Statement.xlsx` unchanged when building or running the prototype.
+- Keep `planning/Wealth_Statement.xlsx` unchanged when building or running the prototype.
 - Do not import workbook formulas into the prototype without first defining their inputs, outputs, units, and edge-case behavior.
 - Treat ending account balances as incomplete measures of household wealth when modeled RMD cash has left the tracked accounts.
 
