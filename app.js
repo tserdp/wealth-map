@@ -84,8 +84,15 @@ function ordinaryIncomeTax(profile, ordinaryIncome) {
   );
 }
 
+function realAnnualReturn(profile) {
+  return (
+    (1 + profile.expectedAnnualReturn) / (1 + profile.inflationRate) - 1
+  );
+}
+
 function projectPortfolio(profile, years) {
   const starting = profile.assets;
+  const returnRate = realAnnualReturn(profile);
   const startingFinancialAssets =
     starting.brokerage +
     starting.fourOhOneK +
@@ -113,9 +120,9 @@ function projectPortfolio(profile, years) {
 
   for (let year = 0; year < years; year += 1) {
     brokerage *=
-      1 + profile.expectedAnnualReturn * (1 - profile.taxableGainsTaxRate);
-    preTax *= 1 + profile.expectedAnnualReturn;
-    roth *= 1 + profile.expectedAnnualReturn;
+      1 + returnRate * (1 - profile.taxableGainsTaxRate);
+    preTax *= 1 + returnRate;
+    roth *= 1 + returnRate;
     cash += profile.annualSavings * contributionShares.cash;
     brokerage += profile.annualSavings * contributionShares.brokerage;
     preTax +=
@@ -134,7 +141,7 @@ function projectPortfolio(profile, years) {
           baseTax,
       );
       preTax -= conversion;
-      roth += Math.max(0, conversion - taxOnConversion);
+      roth += conversion;
       brokerage = Math.max(0, brokerage - taxOnConversion);
       conversionTax += taxOnConversion;
     }
@@ -229,18 +236,21 @@ function calculate(profile) {
   const fundingComponent =
     requiredAssets > 0
       ? Math.min(1, Math.max(0, projectedAssets / requiredAssets))
-      : 0;
+      : 1;
   const timingComponent =
     expectedRetirementAge === null
       ? 0
-      : Math.max(
-          0,
-          Math.min(
-            1,
-            (profile.lifeExpectancy - expectedRetirementAge) /
-              Math.max(1, profile.lifeExpectancy - profile.currentAge),
-          ),
-        );
+      : expectedRetirementAge <= profile.targetRetirementAge
+        ? 1
+        : Math.max(
+            0,
+            1 -
+              (expectedRetirementAge - profile.targetRetirementAge) /
+                Math.max(
+                  1,
+                  profile.lifeExpectancy - profile.targetRetirementAge,
+                ),
+          );
   const score = Math.round(
     Math.max(
       0,
@@ -317,7 +327,13 @@ function inputConfig() {
       ],
     ],
     assumptions: [
-      ["expectedAnnualReturn", "Expected annual return", "percent", "%", 5],
+      [
+        "expectedAnnualReturn",
+        "Expected annual return (nominal)",
+        "percent",
+        "%",
+        5,
+      ],
       ["inflationRate", "Inflation rate", "percent", "%", 2.5],
       ["safeWithdrawalRate", "Safe withdrawal rate", "percent", "%", 4],
       [
@@ -328,7 +344,6 @@ function inputConfig() {
         "real_dollars",
         [
           ["real_dollars", "Real dollars"],
-          ["nominal_dollars", "Nominal dollars"],
         ],
       ],
     ],

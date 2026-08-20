@@ -328,10 +328,11 @@ Use simplified, transparent calculations suitable for a prototype. Keep calculat
 ### Cash flow
 
 - Total annual income = salary + other annual income.
-- Annual surplus = total annual income - current annual expenses.
+- Illustrative current income taxes = simplified progressive federal tax + editable state income tax rate.
+- After-tax annual surplus = total annual income - illustrative current income taxes - current annual expenses.
 - Annual savings rate = annual savings / total annual income.
 
-- Annual savings is an explicit planning input and must not automatically be substituted with annual surplus. The UI may show both values and explain the difference.
+- Annual savings is an explicit planning input and must not automatically be substituted with, or subtracted again from, annual surplus. The UI may show both values and explain the difference.
 
 ### Retirement target
 
