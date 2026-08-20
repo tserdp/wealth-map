@@ -202,7 +202,10 @@ function calculate(profile) {
     assets.cash;
   const totalAssets = financialAssets + assets.realEstate;
   const totalIncome = profile.annualSalary + profile.otherAnnualIncome;
-  const surplus = totalIncome - profile.currentAnnualExpenses;
+  const currentFederalTax = progressiveFederalTax(profile, totalIncome);
+  const currentStateTax = Math.max(0, totalIncome) * profile.stateIncomeTaxRate;
+  const afterTaxIncome = Math.max(0, totalIncome - currentFederalTax - currentStateTax);
+  const surplus = afterTaxIncome - profile.currentAnnualExpenses;
   const savingsRate = totalIncome > 0 ? profile.annualSavings / totalIncome : 0;
   const yearsToTarget = Math.max(
     0,
@@ -258,6 +261,7 @@ function calculate(profile) {
     financialAssets,
     totalAssets,
     totalIncome,
+    afterTaxIncome,
     surplus,
     savingsRate,
     yearsToTarget,
@@ -271,8 +275,8 @@ function calculate(profile) {
       projectedAssets * profile.safeWithdrawalRate +
       retirement.netSocialSecurity -
       retirement.irmaa,
-    currentFederalTax: progressiveFederalTax(profile, totalIncome),
-    currentStateTax: Math.max(0, totalIncome) * profile.stateIncomeTaxRate,
+    currentFederalTax,
+    currentStateTax,
     projectedConversionTax: portfolio.conversionTax,
     projectedRmd: retirement.rmd,
     projectedSocialSecurityTax: retirement.socialSecurityTax,
