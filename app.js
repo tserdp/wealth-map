@@ -90,45 +90,83 @@ function realAnnualReturn(profile) {
   );
 }
 
+function contributionRate(profile, key) {
+  return Math.min(1, Math.max(0, numberValue(profile.contributionRates[key])));
+}
+
+function calculateContributions(profile) {
+  const earnedIncome = Math.max(
+    0,
+    numberValue(profile.annualSalary) + numberValue(profile.otherAnnualIncome),
+  );
+  const salary = Math.max(0, numberValue(profile.annualSalary));
+  const employeeFourOhOneK = salary * contributionRate(profile, "fourOhOneK");
+  const traditionalIra =
+    earnedIncome * contributionRate(profile, "traditionalIra");
+  const employeePreTaxContributions = employeeFourOhOneK + traditionalIra;
+  const taxableIncome = Math.max(0, earnedIncome - employeePreTaxContributions);
+  const currentFederalTax = progressiveFederalTax(profile, taxableIncome);
+  const currentStateTax = taxableIncome * profile.stateIncomeTaxRate;
+  const afterTaxIncome = Math.max(
+    0,
+    taxableIncome - currentFederalTax - currentStateTax,
+  );
+  const rothIra = afterTaxIncome * contributionRate(profile, "rothIra");
+  const brokerage = afterTaxIncome * contributionRate(profile, "brokerage");
+  const cash = afterTaxIncome * contributionRate(profile, "cash");
+  const employeePostTaxContributions = rothIra + brokerage + cash;
+  const matchRate = Math.min(1, Math.max(0, numberValue(profile.employerMatch.rate)));
+  const matchCap = Math.min(1, Math.max(0, numberValue(profile.employerMatch.salaryCap)));
+  const employerFourOhOneKMatch = Math.min(
+    employeeFourOhOneK * matchRate,
+    salary * matchCap,
+  );
+  const employeeSavings =
+    employeePreTaxContributions + employeePostTaxContributions;
+
+  return {
+    earnedIncome,
+    taxableIncome,
+    currentFederalTax,
+    currentStateTax,
+    afterTaxIncome,
+    employeeFourOhOneK,
+    traditionalIra,
+    rothIra,
+    brokerage,
+    cash,
+    employeePreTaxContributions,
+    employeePostTaxContributions,
+    employeeSavings,
+    employerFourOhOneKMatch,
+    totalRetirementContributions:
+      employeeSavings + employerFourOhOneKMatch,
+  };
+}
+
 function projectPortfolio(profile, years) {
   const starting = profile.assets;
   const returnRate = realAnnualReturn(profile);
-  const startingFinancialAssets =
-    starting.brokerage +
-    starting.fourOhOneK +
-    starting.traditionalIra +
-    starting.rothIra +
-    starting.cash;
-  const contributionShares =
-    startingFinancialAssets > 0
-      ? {
-          brokerage: starting.brokerage / startingFinancialAssets,
-          fourOhOneK: starting.fourOhOneK / startingFinancialAssets,
-          traditionalIra: starting.traditionalIra / startingFinancialAssets,
-          rothIra: starting.rothIra / startingFinancialAssets,
-          cash: starting.cash / startingFinancialAssets,
-        }
-      : { brokerage: 0, fourOhOneK: 1, traditionalIra: 0, rothIra: 0, cash: 0 };
+  const contributions = calculateContributions(profile);
   let brokerage = starting.brokerage;
   let preTax = starting.fourOhOneK + starting.traditionalIra;
   let roth = starting.rothIra;
   let cash = starting.cash;
   let conversionTax = 0;
-  const currentOrdinaryIncome =
-    profile.annualSalary + profile.otherAnnualIncome;
-  const baseTax = ordinaryIncomeTax(profile, currentOrdinaryIncome);
+  const baseTax = ordinaryIncomeTax(profile, contributions.taxableIncome);
 
   for (let year = 0; year < years; year += 1) {
     brokerage *=
       1 + returnRate * (1 - profile.taxableGainsTaxRate);
     preTax *= 1 + returnRate;
     roth *= 1 + returnRate;
-    cash += profile.annualSavings * contributionShares.cash;
-    brokerage += profile.annualSavings * contributionShares.brokerage;
+    cash += contributions.cash;
+    brokerage += contributions.brokerage;
     preTax +=
-      profile.annualSavings *
-      (contributionShares.fourOhOneK + contributionShares.traditionalIra);
-    roth += profile.annualSavings * contributionShares.rothIra;
+      contributions.employeeFourOhOneK +
+      contributions.employerFourOhOneKMatch +
+      contributions.traditionalIra;
+    roth += contributions.rothIra;
 
     const conversion = Math.min(
       preTax,
@@ -137,7 +175,7 @@ function projectPortfolio(profile, years) {
     if (conversion > 0) {
       const taxOnConversion = Math.max(
         0,
-        ordinaryIncomeTax(profile, currentOrdinaryIncome + conversion) -
+        ordinaryIncomeTax(profile, contributions.taxableIncome + conversion) -
           baseTax,
       );
       preTax -= conversion;
@@ -208,12 +246,14 @@ function calculate(profile) {
     assets.rothIra +
     assets.cash;
   const totalAssets = financialAssets + assets.realEstate;
-  const totalIncome = profile.annualSalary + profile.otherAnnualIncome;
-  const currentFederalTax = progressiveFederalTax(profile, totalIncome);
-  const currentStateTax = Math.max(0, totalIncome) * profile.stateIncomeTaxRate;
-  const afterTaxIncome = Math.max(0, totalIncome - currentFederalTax - currentStateTax);
-  const surplus = afterTaxIncome - profile.currentAnnualExpenses;
-  const savingsRate = totalIncome > 0 ? profile.annualSavings / totalIncome : 0;
+  const contributions = calculateContributions(profile);
+  const totalIncome = contributions.earnedIncome;
+  const surplus =
+    contributions.afterTaxIncome -
+    contributions.employeePostTaxContributions -
+    profile.currentAnnualExpenses;
+  const savingsRate =
+    totalIncome > 0 ? contributions.employeeSavings / totalIncome : 0;
   const yearsToTarget = Math.max(
     0,
     profile.targetRetirementAge - profile.currentAge,
@@ -271,9 +311,12 @@ function calculate(profile) {
     financialAssets,
     totalAssets,
     totalIncome,
-    afterTaxIncome,
+    afterTaxIncome: contributions.afterTaxIncome,
     surplus,
     savingsRate,
+    employeeSavings: contributions.employeeSavings,
+    employerFourOhOneKMatch: contributions.employerFourOhOneKMatch,
+    totalRetirementContributions: contributions.totalRetirementContributions,
     yearsToTarget,
     projectedAssets,
     requiredAssets,
@@ -285,8 +328,8 @@ function calculate(profile) {
       projectedAssets * profile.safeWithdrawalRate +
       retirement.netSocialSecurity -
       retirement.irmaa,
-    currentFederalTax,
-    currentStateTax,
+    currentFederalTax: contributions.currentFederalTax,
+    currentStateTax: contributions.currentStateTax,
     projectedConversionTax: portfolio.conversionTax,
     projectedRmd: retirement.rmd,
     projectedSocialSecurityTax: retirement.socialSecurityTax,
@@ -407,7 +450,6 @@ function inputConfig() {
       ["otherAnnualIncome", "Other annual income", "currency", "per year", 0],
     ],
     expenses: [
-      ["annualSavings", "Annual savings", "currency", "per year", 30000],
       [
         "currentAnnualExpenses",
         "Current annual expenses",
@@ -423,12 +465,65 @@ function inputConfig() {
         75000,
       ],
     ],
+    contributions: [
+      [
+        "contributionRates.fourOhOneK",
+        "Employee 401(k) contribution",
+        "percent",
+        "% of salary",
+        10,
+      ],
+      [
+        "contributionRates.traditionalIra",
+        "Traditional IRA contribution",
+        "percent",
+        "% of gross earned income",
+        2,
+      ],
+      [
+        "contributionRates.rothIra",
+        "Roth IRA contribution",
+        "percent",
+        "% of income after simplified taxes and employee pre-tax contributions",
+        6,
+      ],
+      [
+        "contributionRates.brokerage",
+        "Brokerage contribution",
+        "percent",
+        "% of income after simplified taxes and employee pre-tax contributions",
+        6,
+      ],
+      [
+        "contributionRates.cash",
+        "Cash contribution",
+        "percent",
+        "% of income after simplified taxes and employee pre-tax contributions",
+        2,
+      ],
+      [
+        "employerMatch.rate",
+        "Employer match rate",
+        "percent",
+        "% of employee 401(k) contribution",
+        50,
+      ],
+      [
+        "employerMatch.salaryCap",
+        "Employer match cap",
+        "percent",
+        "% of salary",
+        3,
+      ],
+    ],
   };
 }
 
 function createField(config) {
   const [key, label, type, unit, fallback, options] = config;
-  const value = workingProfile[key];
+  const value = key
+    .split(".")
+    .reduce((currentValue, path) => currentValue?.[path], workingProfile);
   const fieldId = `field-${key}`;
   const wrapper = document.createElement("div");
   wrapper.className = "field";
@@ -456,6 +551,7 @@ function createField(config) {
     control.type = type === "percent" ? "number" : type;
     if (type === "currency" || type === "number" || type === "percent") {
       control.min = type === "percent" ? "0" : "0";
+      if (type === "percent") control.max = "100";
       control.step =
         type === "percent" ? "0.1" : type === "currency" ? "100" : "1";
       control.inputMode = "decimal";
@@ -477,6 +573,7 @@ function renderFormFields() {
     ["#tax-fields", config.tax],
     ["#income-fields", config.income],
     ["#expense-fields", config.expenses],
+    ["#contribution-fields", config.contributions],
   ].forEach(([selector, fields]) => {
     const container = $(selector);
     container.replaceChildren(...fields.map(createField));
@@ -597,6 +694,11 @@ function renderMetrics() {
   $("#total-income").textContent = money(metrics.totalIncome);
   $("#annual-surplus").textContent = money(metrics.surplus);
   $("#savings-rate").textContent = percent(metrics.savingsRate);
+  $("#employee-savings").textContent = money(metrics.employeeSavings);
+  $("#employer-match").textContent = money(metrics.employerFourOhOneKMatch);
+  $("#retirement-contributions").textContent = money(
+    metrics.totalRetirementContributions,
+  );
   $("#current-federal-tax").textContent = money(metrics.currentFederalTax);
   $("#current-state-tax").textContent = money(metrics.currentStateTax);
   $("#after-tax-assets").textContent = money(metrics.afterTaxAssets);

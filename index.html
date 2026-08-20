@@ -150,12 +150,19 @@
             </div>
             <div class="cashflow-layout">
               <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></div><div class="form-grid" id="income-fields"></div></section>
-              <section class="panel form-panel" aria-label="Expenses and savings"><div class="section-heading"><div><span class="panel-label">Expenses and savings</span><p>Plan inputs that determine the annual surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></section>
+              <section class="panel form-panel" aria-label="Expenses"><div class="section-heading"><div><span class="panel-label">Expenses</span><p>Plan inputs that determine the annual surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></section>
             </div>
+            <section class="panel form-panel" aria-label="Contribution rates">
+              <div class="section-heading"><div><span class="panel-label">Contribution rates</span><p>Employer match = employee 401(k) contribution × match rate, capped at the selected percentage of salary.</p></div></div>
+              <div class="form-grid" id="contribution-fields"></div>
+            </section>
             <div class="summary-strip">
               <div><span>Gross annual income</span><strong id="total-income">$0</strong></div>
               <div><span>After-tax annual surplus</span><strong id="annual-surplus">$0</strong></div>
               <div><span>Annual savings rate</span><strong id="savings-rate">0%</strong></div>
+              <div><span>Employee annual savings</span><strong id="employee-savings">$0</strong></div>
+              <div><span>Employer 401(k) match</span><strong id="employer-match">$0</strong></div>
+              <div><span>Total retirement contributions</span><strong id="retirement-contributions">$0</strong></div>
             </div>
           </section>
 
@@ -171,7 +178,7 @@
         <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
       </main>
     </div>
-    <script src="./data.js"></script>
-    <script src="./app.js?v=4"></script>
+    <script src="./data.js?v=2"></script>
+    <script src="./app.js?v=6"></script>
   </body>
 </html>

@@ -132,6 +132,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .summary-strip > div { padding: 20px 22px; border-radius: var(--radius); background: var(--lime); }
 .summary-strip > div:nth-child(2) { background: var(--blue); color: white; }
 .summary-strip > div:nth-child(3) { background: var(--surface); border: 1px solid var(--line); }
+.summary-strip > div:nth-child(n + 4) { background: var(--surface); border: 1px solid var(--line); }
 .summary-strip span { display: block; font: 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
 .summary-strip strong { display: block; margin-top: 12px; font-size: 27px; font-weight: 700; }
 

@@ -7,7 +7,17 @@ const SAMPLE_PROFILE = Object.freeze({
   filingStatus: "Married filing jointly",
   annualSalary: 150000,
   otherAnnualIncome: 0,
-  annualSavings: 30000,
+  contributionRates: Object.freeze({
+    fourOhOneK: 0.1,
+    traditionalIra: 0.02,
+    rothIra: 0.06,
+    brokerage: 0.06,
+    cash: 0.02,
+  }),
+  employerMatch: Object.freeze({
+    rate: 0.5,
+    salaryCap: 0.03,
+  }),
   currentAnnualExpenses: 85000,
   retirementAnnualSpendingGoal: 75000,
   expectedAnnualReturn: 0.05,
@@ -72,5 +82,7 @@ function cloneSampleProfile() {
   return {
     ...SAMPLE_PROFILE,
     assets: { ...SAMPLE_PROFILE.assets },
+    contributionRates: { ...SAMPLE_PROFILE.contributionRates },
+    employerMatch: { ...SAMPLE_PROFILE.employerMatch },
   };
 }

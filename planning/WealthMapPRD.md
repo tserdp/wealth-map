@@ -328,11 +328,15 @@ Use simplified, transparent calculations suitable for a prototype. Keep calculat
 ### Cash flow
 
 - Total annual income = salary + other annual income.
-- Illustrative current income taxes = simplified progressive federal tax + editable state income tax rate.
-- After-tax annual surplus = total annual income - illustrative current income taxes - current annual expenses.
-- Annual savings rate = annual savings / total annual income.
+- Employee 401(k) contribution = employee 401(k) rate x annual salary.
+- Traditional IRA contribution = Traditional IRA rate x total annual income.
+- Illustrative current income taxes apply after those employee pre-tax contributions.
+- Roth IRA, brokerage, and cash contributions use the income remaining after illustrative taxes and employee pre-tax contributions.
+- Employer 401(k) match = the lesser of employee 401(k) contribution x match rate and annual salary x match cap. It increases retirement savings but does not reduce employee income, cash flow, or taxable income.
+- After-tax annual surplus = income after employee pre-tax contributions and illustrative taxes - employee post-tax contributions - current annual expenses.
+- Employee savings rate = employee contributions / total annual income.
 
-- Annual savings is an explicit planning input and must not automatically be substituted with, or subtracted again from, annual surplus. The UI may show both values and explain the difference.
+- Total retirement contributions = employee contributions + employer 401(k) match. The UI must distinguish employee savings, employer match, and total retirement contributions.
 
 ### Retirement target
 
@@ -344,10 +348,10 @@ Use simplified, transparent calculations suitable for a prototype. Keep calculat
 
 ### Projection
 
-Use a simple annual compounding projection:
+Use a simple annual compounding projection with fixed real-dollar, end-of-year contributions to their matching account buckets:
 
 - Years to target retirement = target retirement age - current age.
-- Projected assets = current financial assets compounded at the expected annual return plus annual savings compounded through the remaining years.
+- Projected assets = current financial assets compounded at the expected annual return plus calculated employee and employer contributions compounded through the remaining years.
 - Do not project real estate as spendable retirement portfolio assets unless the UI explicitly labels it as a separate assumption.
 - Account for contributions as end-of-year contributions unless the implementation documents another convention.
 
