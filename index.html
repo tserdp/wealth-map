@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Wealth Map retirement readiness prototype" />
     <title>Wealth Map | Retirement Readiness</title>
-    <link rel="stylesheet" href="/wealth-map/styles.css" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -111,34 +111,67 @@
           </section>
 
           <section class="page-view" data-view="profile" aria-labelledby="profile-heading" hidden>
-            <div class="page-intro"><div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your profile</h2><p>Set the assumptions that shape every projection.</p></div><span c[...]
-            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Personal details</span><p>These values travel with your working plan.</p></div></div><div cla[...]
-            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></di[...]
-            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight ta[...]
+            <div class="page-intro">
+              <div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your profile</h2><p>Set the assumptions that shape every projection.</p></div>
+            </div>
+            <section class="form-panel panel" aria-label="Personal details">
+              <div class="section-heading"><div><span class="panel-label">Personal details</span><p>These values travel with your working plan.</p></div></div>
+              <div class="form-grid" id="profile-fields"></div>
+            </section>
+            <section class="form-panel panel" aria-label="Projection assumptions">
+              <div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></div>
+              <div class="form-grid" id="assumption-fields"></div>
+            </section>
+            <section class="form-panel panel" aria-label="Tax and retirement income assumptions">
+              <div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax estimate.</p></div></div>
+              <div class="form-grid" id="tax-fields"></div>
+            </section>
           </section>
 
           <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
-            <div class="page-intro"><div><span class="eyebrow">WHERE YOUR MONEY LIVES</span><h2 id="assets-heading">Assets</h2><p>Balances grouped by account type and simplified tax treatment.</p[...]
-            <div class="panel table-panel"><div class="table-header"><div><span class="panel-label">Investable assets</span><p>Real estate is shown separately from the retirement portfolio.</p></[...]
-            <div class="panel real-estate-panel"><div><span class="panel-label">Other assets</span><p>Not automatically treated as spendable portfolio assets.</p></div><div class="inline-field"><[...]
+            <div class="page-intro">
+              <div><span class="eyebrow">WHERE YOUR MONEY LIVES</span><h2 id="assets-heading">Assets</h2><p>Balances grouped by account type and simplified tax treatment.</p></div>
+            </div>
+            <section class="panel table-panel" aria-label="Investable assets">
+              <div class="table-header"><div><span class="panel-label">Investable assets</span><p>Real estate is shown separately from the retirement portfolio.</p></div><strong id="financial-assets-total">$0</strong></div>
+              <div id="asset-fields"></div>
+              <div class="table-footer"><span>Financial assets total</span><strong id="financial-assets-total-bottom">$0</strong></div>
+            </section>
+            <section class="panel real-estate-panel" aria-label="Other assets">
+              <div><span class="panel-label">Other assets</span><p>Not automatically treated as spendable portfolio assets.</p></div>
+              <div class="inline-field"><label for="realEstate">Real estate</label><input id="realEstate" data-field="assets.realEstate" type="number" min="0" step="1000" inputmode="decimal" /><span>USD</span></div>
+              <div class="comparison"><span>Total assets</span><strong id="total-assets">$0</strong></div>
+            </section>
           </section>
 
           <section class="page-view" data-view="cashflow" aria-labelledby="cashflow-heading" hidden>
-            <div class="page-intro"><div><span class="eyebrow">THE ENGINE OF THE PLAN</span><h2 id="cashflow-heading">Income &amp; Expenses</h2><p>See what your current earnings and spending make[...]
-            <div class="cashflow-layout"><div class="panel form-panel"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></d[...]
-            <div class="summary-strip"><div><span>Total annual income</span><strong id="total-income">$0</strong></div><div><span>Annual surplus</span><strong id="annual-surplus">$0</strong></div[...]
+            <div class="page-intro">
+              <div><span class="eyebrow">THE ENGINE OF THE PLAN</span><h2 id="cashflow-heading">Income &amp; Expenses</h2><p>See what your current earnings and spending make possible.</p></div>
+            </div>
+            <div class="cashflow-layout">
+              <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></div><div class="form-grid" id="income-fields"></div></section>
+              <section class="panel form-panel" aria-label="Expenses and savings"><div class="section-heading"><div><span class="panel-label">Expenses and savings</span><p>Plan inputs that determine the annual surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></section>
+            </div>
+            <div class="summary-strip">
+              <div><span>Total annual income</span><strong id="total-income">$0</strong></div>
+              <div><span>Annual surplus</span><strong id="annual-surplus">$0</strong></div>
+              <div><span>Annual savings rate</span><strong id="savings-rate">0%</strong></div>
+            </div>
           </section>
 
           <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
-            <div class="page-intro"><div><span class="eyebrow">TURN INSIGHT INTO ACTION</span><h2 id="recommendations-heading">Recommendations</h2><p>Small, prioritized actions based on your curr[...]
+            <div class="page-intro">
+              <div><span class="eyebrow">TURN INSIGHT INTO ACTION</span><h2 id="recommendations-heading">Recommendations</h2><p>Small, prioritized actions based on your current plan.</p></div>
+              <span class="status-pill" id="recommendation-count">0 actions</span>
+            </div>
             <div class="recommendation-list" id="recommendation-list"></div>
-            <div class="notice-panel"><strong>Prototype boundary</strong><p>Tax, Roth conversion, Social Security, IRMAA, and RMD values are simplified educational estimates only. Full optimizati[...]
+            <section class="notice-panel"><strong>Prototype boundary</strong><p>Tax, Roth conversion, Social Security, IRMAA, and RMD values are simplified educational estimates only. Full optimization remains outside this prototype.</p></section>
           </section>
         </div>
         <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
       </main>
     </div>
-    <script src="/wealth-map/data.js"></script>
-    <script src="/wealth-map/app.js"></script>
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
   </body>
 </html>
