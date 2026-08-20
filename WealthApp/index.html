@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Wealth Map retirement readiness prototype" />
+    <title>Wealth Map | Retirement Readiness</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="scrim" id="scrim" hidden></div>
+      <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">WM</div>
+          <div>
+            <strong>Wealth Map</strong>
+            <span>Retirement planning</span>
+          </div>
+          <button class="icon-button sidebar-close" id="close-menu" type="button" aria-label="Close navigation">×</button>
+        </div>
+        <nav class="primary-nav" aria-label="Main pages">
+          <button class="nav-item active" type="button" data-page="readiness"><span>01</span>Readiness</button>
+          <button class="nav-item" type="button" data-page="profile"><span>02</span>Profile</button>
+          <button class="nav-item" type="button" data-page="assets"><span>03</span>Assets</button>
+          <button class="nav-item" type="button" data-page="cashflow"><span>04</span>Income &amp; Expenses</button>
+          <button class="nav-item" type="button" data-page="recommendations"><span>05</span>Recommendations</button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="mini-profile">
+            <span class="eyebrow">Sample plan</span>
+            <strong id="sidebar-name">Alex Morgan</strong>
+            <span id="sidebar-timeline">Age 45 → Retire 65</span>
+          </div>
+          <p class="sidebar-note"><span aria-hidden="true">i</span> Educational estimate only</p>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="icon-button menu-toggle" id="open-menu" type="button" aria-label="Open navigation">☰</button>
+            <div>
+              <span class="eyebrow">WEALTH MAP / <span id="breadcrumb">READINESS</span></span>
+              <h1 id="page-title">Retirement Readiness</h1>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <span class="state-indicator"><span class="status-dot"></span>Live model</span>
+            <button class="button button-quiet" id="reset-button" type="button">Reset sample data</button>
+          </div>
+        </header>
+
+        <div class="page-container">
+          <section class="page-view" data-view="readiness" aria-labelledby="readiness-heading">
+            <div class="page-intro">
+              <div>
+                <span class="eyebrow">YOUR PRIMARY ANSWER</span>
+                <h2 id="readiness-heading">Can your plan carry you there?</h2>
+                <p>Adjust any assumption and watch the retirement picture respond in real time.</p>
+              </div>
+              <div class="intro-meta"><span class="status-pill" id="readiness-status">On Track</span><span id="readiness-updated">Updated just now</span></div>
+            </div>
+            <div class="readiness-grid">
+              <article class="hero-score panel">
+                <div class="panel-label">Retirement Health Score <button class="info-button" type="button" title="A heuristic based on assets, savings, and timing">i</button></div>
+                <div class="score-row"><strong id="score-value">92</strong><span>/100</span></div>
+                <div class="score-track"><span id="score-bar"></span></div>
+                <div class="score-footer"><strong id="score-status">On Track</strong><span>Heuristic estimate, not a probability</span></div>
+              </article>
+              <article class="panel timing-card">
+                <div class="panel-label">Retirement timing</div>
+                <div class="metric-line"><span>Target age</span><strong id="target-age">65</strong></div>
+                <div class="metric-line"><span>Expected age</span><strong id="expected-age">63</strong></div>
+                <div class="metric-line"><span>Years to target</span><strong id="years-to-target">20</strong></div>
+              </article>
+              <article class="panel funding-card">
+                <div class="panel-label">Funding position</div>
+                <div class="metric-line"><span>Projected assets</span><strong id="projected-assets">$0</strong></div>
+                <div class="metric-line"><span>Required assets</span><strong id="required-assets">$0</strong></div>
+                <div class="metric-line emphasis"><span id="funding-label">Funding gap</span><strong id="funding-gap">$0</strong></div>
+              </article>
+            </div>
+            <div class="two-column-grid">
+              <article class="panel spending-card">
+                <div class="panel-label">Spending capacity</div>
+                <div class="big-metric" id="safe-spending">$0</div>
+                <p>Estimated sustainable annual spending at the selected withdrawal rate.</p>
+                <div class="comparison"><span>Retirement spending goal</span><strong id="spending-goal">$0</strong></div>
+              </article>
+              <article class="panel drivers-card">
+                <div class="panel-label">What drives this result?</div>
+                <div class="driver-list">
+                  <span><b>01</b> Investable assets</span><span><b>02</b> Annual savings</span><span><b>03</b> Expected return</span><span><b>04</b> Spending goal</span><span><b>05</b> Retirement age</span><span><b>06</b> Withdrawal rate</span>
+                </div>
+                <p class="assumption-note">Real-dollar projection with end-of-year contributions. Tax values are simplified estimates, not official tax calculations.</p>
+              </article>
+            </div>
+            <article class="panel tax-summary-card">
+              <div class="panel-label">Tax-aware estimate</div>
+              <div class="tax-summary-grid">
+                <div><span>Current federal tax</span><strong id="current-federal-tax">$0</strong></div>
+                <div><span>Current state tax</span><strong id="current-state-tax">$0</strong></div>
+                <div><span>After-tax projected assets</span><strong id="after-tax-assets">$0</strong></div>
+                <div><span>Projected RMD</span><strong id="projected-rmd">$0</strong></div>
+                <div><span>Social Security tax</span><strong id="projected-ss-tax">$0</strong></div>
+                <div><span>IRMAA surcharge</span><strong id="projected-irmaa">$0</strong></div>
+              </div>
+              <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable gains, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, IRMAA threshold, and RMD assumptions.</p>
+            </article>
+          </section>
+
+          <section class="page-view" data-view="profile" aria-labelledby="profile-heading" hidden>
+            <div class="page-intro"><div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your profile</h2><p>Set the assumptions that shape every projection.</p></div><span class="status-pill neutral">Editable inputs</span></div>
+            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Personal details</span><p>These values travel with your working plan.</p></div></div><div class="form-grid" id="profile-fields"></div></div>
+            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></div><div class="form-grid" id="assumption-fields"></div></div>
+            <div class="form-panel panel"><div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax-aware estimate.</p></div></div><div class="form-grid" id="tax-fields"></div></div>
+          </section>
+
+          <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
+            <div class="page-intro"><div><span class="eyebrow">WHERE YOUR MONEY LIVES</span><h2 id="assets-heading">Assets</h2><p>Balances grouped by account type and simplified tax treatment.</p></div><span class="status-pill neutral">Working plan</span></div>
+            <div class="panel table-panel"><div class="table-header"><div><span class="panel-label">Investable assets</span><p>Real estate is shown separately from the retirement portfolio.</p></div><strong id="financial-assets-total">$0</strong></div><div class="asset-table" id="asset-fields"></div><div class="total-row"><span>Total financial assets</span><strong id="financial-assets-total-bottom">$0</strong></div></div>
+            <div class="panel real-estate-panel"><div><span class="panel-label">Other assets</span><p>Not automatically treated as spendable portfolio assets.</p></div><div class="inline-field"><label for="realEstate">Real estate value</label><input id="realEstate" data-field="assets.realEstate" data-type="currency" type="number" min="0" step="1000" /></div><div class="total-row"><span>Total assets</span><strong id="total-assets">$0</strong></div></div>
+          </section>
+
+          <section class="page-view" data-view="cashflow" aria-labelledby="cashflow-heading" hidden>
+            <div class="page-intro"><div><span class="eyebrow">THE ENGINE OF THE PLAN</span><h2 id="cashflow-heading">Income &amp; Expenses</h2><p>See what your current earnings and spending make possible.</p></div><span class="status-pill neutral">Annual view</span></div>
+            <div class="cashflow-layout"><div class="panel form-panel"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></div><div class="form-grid" id="income-fields"></div></div><div class="panel form-panel"><div class="section-heading"><div><span class="panel-label">Savings and spending</span><p>Keep annual savings separate from surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></div></div>
+            <div class="summary-strip"><div><span>Total annual income</span><strong id="total-income">$0</strong></div><div><span>Annual surplus</span><strong id="annual-surplus">$0</strong></div><div><span>Savings rate</span><strong id="savings-rate">0%</strong></div></div>
+          </section>
+
+          <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
+            <div class="page-intro"><div><span class="eyebrow">TURN INSIGHT INTO ACTION</span><h2 id="recommendations-heading">Recommendations</h2><p>Small, prioritized actions based on your current inputs.</p></div><span class="status-pill" id="recommendation-count">0 actions</span></div>
+            <div class="recommendation-list" id="recommendation-list"></div>
+            <div class="notice-panel"><strong>Prototype boundary</strong><p>Tax, Roth conversion, Social Security, IRMAA, and RMD values are simplified educational estimates only. Full optimization and official tax calculations are not implemented.</p></div>
+          </section>
+        </div>
+        <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
+      </main>
+    </div>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
