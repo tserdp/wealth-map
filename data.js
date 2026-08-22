@@ -32,9 +32,12 @@ const SAMPLE_PROFILE = Object.freeze({
   socialSecurityAnnualBenefit: 0,
   socialSecurityTaxablePercent: 0.85,
   rmdStartAge: 73,
-  rmdRate: 0.04,
   irmaaIncomeThreshold: 200000,
   irmaaAnnualSurcharge: 0,
+  // Simplified NIIT MAGI threshold; the 3.8% rate itself is a fixed illustrative constant.
+  niitThreshold: 250000,
+  // Years of retirement spending held as a buffer to avoid selling brokerage after a down year.
+  cashReserveTargetYears: 1,
   assets: Object.freeze({
     brokerage: 180000,
     fourOhOneK: 420000,
@@ -43,6 +46,8 @@ const SAMPLE_PROFILE = Object.freeze({
     cash: 50000,
     realEstate: 350000,
   }),
+  // Per-age user adjustments layered on top of the modeled timeline; empty by default.
+  timelineOverrides: Object.freeze({}),
 });
 
 const ASSET_METADATA = Object.freeze({
@@ -84,5 +89,6 @@ function cloneSampleProfile() {
     assets: { ...SAMPLE_PROFILE.assets },
     contributionRates: { ...SAMPLE_PROFILE.contributionRates },
     employerMatch: { ...SAMPLE_PROFILE.employerMatch },
+    timelineOverrides: {},
   };
 }

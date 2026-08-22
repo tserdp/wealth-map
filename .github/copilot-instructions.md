@@ -13,7 +13,9 @@ The following files are authoritative and must be kept aligned with the implemen
 - `planning/wireframe-income-expenses.md`: editable income, savings, expenses, surplus, and savings-rate layout.
 - `planning/wireframe-retirement-readiness.md`: primary Retirement Health Score, timing, funding, spending, and assumptions layout.
 - `planning/wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and prototype boundaries.
+- `planning/calculation-model.md`: the full deterministic calculation model, including the wealth-timeline engine, RMD divisor table, NIIT, and Social Security claiming-age comparison.
 - `planning/Wealth_Statement.xlsx`: read-only research and validation reference. It is not a runtime dependency and must never be modified.
+- `planning/Retirement_Calculator.xlsx`: second read-only research and validation reference. It is not a runtime dependency and must never be modified.
 
 ## Product Purpose
 
@@ -30,13 +32,14 @@ This is an educational decision-support tool, not a net-worth tracker, financial
 
 ## Prototype Scope
 
-The prototype must provide five navigable views:
+The prototype must provide six navigable views:
 
 1. Profile
 2. Assets
 3. Income & Expenses
 4. Retirement Readiness
-5. Recommendations
+5. Wealth Timeline
+6. Recommendations
 
 The primary MVP result is the Retirement Health Score. The prototype must show:
 
@@ -75,9 +78,11 @@ The sample profile should include:
 - Federal standard deduction, state income tax rate, taxable gains tax rate, pre-tax withdrawal tax rate
 - Annual Roth conversion amount
 - Social Security annual benefit and taxable percentage
-- RMD start age and illustrative RMD rate
+- RMD start age and an illustrative age-indexed RMD divisor table (not a flat rate)
+- NIIT MAGI threshold and retirement cash-reserve target (years of spending)
 - IRMAA income threshold and annual surcharge
 - Taxable brokerage, 401(k), Traditional IRA, Roth IRA, cash, and real estate balances
+- A separate, initially empty map of per-age wealth-timeline overrides (runtime state, not sample data)
 
 Account classifications:
 
@@ -111,6 +116,12 @@ Keep calculation functions separate from rendering functions and make them deter
 - Apply simplified progressive federal brackets by filing status, plus state tax and taxable gains assumptions.
 - Project after-tax assets by applying simplified pre-tax withdrawal tax and conversion tax effects.
 - Include simplified Social Security taxability, RMD, and IRMAA effects in retirement need calculations.
+- Estimate RMDs from an age-indexed divisor table (illustrative IRS Uniform Lifetime Table), not a flat rate.
+- Tax brokerage gains once per year at the taxable-gains rate plus a simplified 3.8% NIIT above an editable MAGI threshold.
+- Provide an editable year-by-year wealth timeline from the current age through life expectancy; a blank per-year override falls back to the modeled value, and an override never affects any other age.
+- Apply a cash-reserve buffer during retirement decumulation that only refills from brokerage in a positive-return year, to illustrate sequence-of-returns risk without forcing a sale after a down year.
+- Show a read-only, single-filer Social Security claiming-age comparison (ages 62-70); do not present it as claiming optimization.
+- Feed a wealth-timeline shortfall (projected depletion before life expectancy) or IRMAA-triggering year into the Retirement Health Score and Recommendations, not only the Timeline page.
 - Label all tax-aware outputs as illustrative estimates, not official tax calculations or advice.
 
 ## Recommendations
@@ -125,14 +136,14 @@ Generate zero to three recommendations, ordered by priority. Each recommendation
 
 Recommendations may address savings rate, retirement timing, spending goal, and tax diversification at an educational level. Do not invent tax savings, Roth conversion amounts, Social Security benefits, IRMAA costs, or RMD values.
 
-Full tax optimization, Roth conversion optimization, Social Security claiming optimization, Monte Carlo, estate planning, and account aggregation remain deferred. P0 may show simplified tax, conversion, Social Security, IRMAA, and RMD estimates, but must label them as illustrative and must not invent unsupported detail.
+Full tax optimization, Roth conversion optimization, Social Security claiming optimization, Monte Carlo, estate planning, and account aggregation remain deferred. P0 may show simplified tax, conversion, Social Security, IRMAA, and RMD estimates, but must label them as illustrative and must not invent unsupported detail. The Social Security claiming-age comparison and the RMD divisor table are illustrative estimates already implemented in P0; they are not claiming optimization or a full RMD cash-flow/alerting engine.
 
 ## Navigation and Layout
 
 Desktop uses a persistent expanded left sidebar with:
 
 - Wealth Map brand
-- Readiness, Profile, Assets, Income & Expenses, and Recommendations links
+- Readiness, Profile, Assets, Income & Expenses, Wealth Timeline, and Recommendations links
 - Active-page indicator
 - Sample-plan summary
 - Educational-estimate note
@@ -149,7 +160,7 @@ The Readiness view is the primary landing view. Use responsive layouts, stacked 
 
 ## Financial and Research Boundaries
 
-`planning/Wealth_Statement.xlsx` is a read-only research artifact. Do not load it in the browser, alter it, or treat it as a runtime dependency. P0 uses the simplified rules above. Future tax-aware work may validate documented scenarios against the workbook before implementing more detailed formulas.
+`planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` are read-only research artifacts. Do not load either in the browser, alter them, or treat them as runtime dependencies. P0 uses the simplified rules above. Future tax-aware work may validate documented scenarios against either workbook before implementing more detailed formulas.
 
 The prototype must clearly state that results are simplified educational estimates and not financial, tax, or legal advice.
 
@@ -157,7 +168,7 @@ The prototype must clearly state that results are simplified educational estimat
 
 A change is complete only when:
 
-- All five views remain reachable.
+- All six views remain reachable.
 - The active navigation state remains correct on desktop and mobile.
 - Edits update all dependent calculations without a reload.
 - Reset restores the immutable sample values.

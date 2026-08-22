@@ -24,7 +24,8 @@
           <button class="nav-item" type="button" data-page="profile"><span>02</span>Profile</button>
           <button class="nav-item" type="button" data-page="assets"><span>03</span>Assets</button>
           <button class="nav-item" type="button" data-page="cashflow"><span>04</span>Income &amp; Expenses</button>
-          <button class="nav-item" type="button" data-page="recommendations"><span>05</span>Recommendations</button>
+          <button class="nav-item" type="button" data-page="timeline"><span>05</span>Timeline</button>
+          <button class="nav-item" type="button" data-page="recommendations"><span>06</span>Recommendations</button>
         </nav>
         <div class="sidebar-footer">
           <div class="mini-profile">
@@ -91,7 +92,7 @@
               <article class="panel drivers-card">
                 <div class="panel-label">What drives this result?</div>
                 <div class="driver-list">
-                  <span><b>01</b> Investable assets</span><span><b>02</b> Annual savings</span><span><b>03</b> Expected return</span><span><b>04</b> Spending goal</span><span><b>05</b> Retirement [...]
+                  <span><b>01</b> Investable assets</span><span><b>02</b> Annual savings</span><span><b>03</b> Expected return</span><span><b>04</b> Spending goal</span><span><b>05</b> Retirement timing</span>
                 </div>
                 <p class="assumption-note">Real-dollar projection with end-of-year contributions. Tax values are simplified estimates, not official tax calculations.</p>
               </article>
@@ -103,10 +104,11 @@
                 <div><span>Current state tax</span><strong id="current-state-tax">$0</strong></div>
                 <div><span>After-tax projected assets</span><strong id="after-tax-assets">$0</strong></div>
                 <div><span>Projected RMD</span><strong id="projected-rmd">$0</strong></div>
+                <div><span>Projected NIIT</span><strong id="projected-niit">$0</strong></div>
                 <div><span>Social Security tax</span><strong id="projected-ss-tax">$0</strong></div>
                 <div><span>IRMAA surcharge</span><strong id="projected-irmaa">$0</strong></div>
               </div>
-              <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable gains, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, IRMAA t[...]
+              <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable-gains and net investment income tax (NIIT) rates, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, an IRS Uniform Lifetime Table RMD estimate, and IRMAA thresholds. All figures are illustrative estimates, not tax advice.</p>
             </article>
           </section>
 
@@ -125,6 +127,15 @@
             <section class="form-panel panel" aria-label="Tax and retirement income assumptions">
               <div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax estimate.</p></div></div>
               <div class="form-grid" id="tax-fields"></div>
+            </section>
+            <section class="panel table-panel" aria-label="Social Security claiming-age comparison">
+              <div class="table-header"><div><span class="panel-label">Social Security claiming-age comparison</span><p>Illustrative early/delayed claiming adjustment assuming the entered benefit is your full retirement age (67) amount. Single-filer estimate; spousal benefits are not modeled.</p></div></div>
+              <table class="ss-claiming-table">
+                <thead>
+                  <tr><th scope="col">Claim age</th><th scope="col">Annual benefit</th><th scope="col">Monthly benefit</th></tr>
+                </thead>
+                <tbody id="ss-claiming-table-body"></tbody>
+              </table>
             </section>
           </section>
 
@@ -166,6 +177,46 @@
             </div>
           </section>
 
+          <section class="page-view" data-view="timeline" aria-labelledby="timeline-heading" hidden>
+            <div class="page-intro">
+              <div><span class="eyebrow">ADJUST IT TO YOUR REALITY</span><h2 id="timeline-heading">Wealth timeline</h2><p>Override any modeled year to match what actually happened or what you expect ahead. Blank fields keep the automatic model value.</p></div>
+              <button class="button button-quiet" id="timeline-reset-button" type="button">Reset timeline overrides</button>
+            </div>
+            <div class="timeline-summary">
+              <div><span>Projected assets at life expectancy</span><strong id="timeline-final-assets">$0</strong></div>
+              <div><span>Projected depletion</span><strong id="timeline-depletion-age">Not projected to deplete</strong></div>
+              <div><span>Years with an override</span><strong id="timeline-overridden-count">0</strong></div>
+            </div>
+            <section class="panel timeline-chart-panel" aria-label="Projected assets chart">
+              <div class="panel-label">Financial assets by age</div>
+              <div id="timeline-chart"></div>
+              <p class="assumption-note">Dashed line marks the target retirement age. Excludes real estate, consistent with the rest of the prototype.</p>
+            </section>
+            <section class="panel timeline-table-panel" aria-label="Editable year-by-year timeline">
+              <div class="panel-label">Year-by-year detail</div>
+              <div class="timeline-table-wrapper">
+                <table class="timeline-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Age</th>
+                      <th scope="col">Return %</th>
+                      <th scope="col">Income</th>
+                      <th scope="col">Expenses / spending</th>
+                      <th scope="col">Extra withdrawal</th>
+                      <th scope="col">Contribution</th>
+                      <th scope="col">Withdrawal</th>
+                      <th scope="col">RMD</th>
+                      <th scope="col">Ending assets</th>
+                      <th scope="col"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="timeline-table-body"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="notice-panel"><strong>Prototype boundary</strong><p>Income and expense overrides apply only during the phase they affect (working years for income, retired years for spending and one-time withdrawals). RMD uses an illustrative IRS Uniform Lifetime Table, and brokerage growth includes a simplified NIIT surtax; Social Security claiming-age changes and account aggregation remain deferred.</p></section>
+          </section>
+
           <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
             <div class="page-intro">
               <div><span class="eyebrow">TURN INSIGHT INTO ACTION</span><h2 id="recommendations-heading">Recommendations</h2><p>Small, prioritized actions based on your current plan.</p></div>
@@ -178,7 +229,7 @@
         <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
       </main>
     </div>
-    <script src="./data.js?v=2"></script>
-    <script src="./app.js?v=6"></script>
+    <script src="./data.js?v=4"></script>
+    <script src="./app.js?v=8"></script>
   </body>
 </html>

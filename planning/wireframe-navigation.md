@@ -14,6 +14,7 @@
 |     Expenses         |                                                         |
 |     Retirement       |                                                         |
 |     Readiness        |                                                         |
+|     Wealth Timeline  |                                                         |
 |     Recommendations  |                                                         |
 |                      |                                                         |
 | ------------------   |                                                         |
@@ -48,6 +49,7 @@
 |     Assets                           |
 |     Income & Expenses                |
 |     Retirement Readiness             |
+|     Wealth Timeline                  |
 |     Recommendations                  |
 |                                      |
 | -------------------------------      |
@@ -62,5 +64,5 @@
 - Highlight the active page.
 - Selecting a mobile item closes the drawer.
 - The drawer can close with `[X]`, outside-click, or Escape.
-- All five pages are reachable from every page.
+- All six pages are reachable from every page.
 - Header actions remain available from every page.
