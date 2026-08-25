@@ -231,10 +231,14 @@
               <div><span>Projected depletion</span><strong id="timeline-depletion-age">Not projected to deplete</strong></div>
               <div><span>Years with an override</span><strong id="timeline-overridden-count">0</strong></div>
             </div>
-            <section class="panel timeline-chart-panel" aria-label="Projected assets chart">
-              <div class="panel-label">Financial assets by age</div>
-              <div id="timeline-chart"></div>
-              <p class="assumption-note">Dashed line marks the target retirement age. Excludes real estate, consistent with the rest of the prototype.</p>
+            <section class="panel timeline-milestones-panel" aria-label="Retirement milestones">
+              <div class="panel-label">Retirement milestones</div>
+              <div id="timeline-milestones" class="timeline-milestones"></div>
+            </section>
+            <section class="panel timeline-composition-panel" aria-label="Portfolio composition at retirement milestones">
+              <div class="panel-label">Portfolio composition at planning milestones</div>
+              <p class="panel-supporting-text">Compare where the modeled financial assets are held when key retirement decisions occur. Real estate is excluded because it is not treated as spendable portfolio assets.</p>
+              <div id="timeline-composition"></div>
             </section>
             <section class="panel timeline-table-panel" aria-label="Editable year-by-year timeline">
               <div class="panel-label">Year-by-year detail</div>
@@ -274,6 +278,6 @@
       </main>
     </div>
     <script src="./data.js?v=4"></script>
-    <script src="./app.js?v=8"></script>
+    <script src="./app.js?v=10"></script>
   </body>
 </html>

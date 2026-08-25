@@ -712,6 +712,7 @@ function buildTimelineRows(profile) {
     preTax = Math.max(0, preTax);
     roth = Math.max(0, roth);
     cash = Math.max(0, cash);
+    const endBalances = { brokerage, preTax, roth, cash };
     const endTotal = brokerage + preTax + roth + cash;
 
     rows.push({
@@ -735,6 +736,7 @@ function buildTimelineRows(profile) {
       irmaa: rowIrmaa,
       startTotal,
       startBalances,
+      endBalances,
       endTotal,
       overrides: override,
       hasOverride: Object.keys(override).length > 0,
@@ -1220,41 +1222,181 @@ function renderTimelineSummary(rows) {
   $("#timeline-overridden-count").textContent = String(summary.overriddenYears);
 }
 
-function renderTimelineChart(rows) {
-  const container = $("#timeline-chart");
-  if (!rows.length) {
+function buildTimelineMilestones(rows, profile) {
+  if (!rows.length) return [];
+
+  const summary = timelineSummary(rows, profile);
+  const byAge = new Map();
+  const addMilestone = (age, label, description) => {
+    if (!Number.isFinite(age)) return;
+    const current = byAge.get(age) || { age, labels: [], description: [] };
+    if (!current.labels.includes(label)) current.labels.push(label);
+    if (description && !current.description.includes(description))
+      current.description.push(description);
+    byAge.set(age, current);
+  };
+
+  const retirementRow = rows.find((row) => row.isRetired);
+  if (retirementRow) {
+    addMilestone(
+      retirementRow.age,
+      "Retirement begins",
+      `Retirement begins in the modeled plan at age ${retirementRow.age}.`,
+    );
+  }
+
+  const socialSecurityRow = rows.find(
+    (row) =>
+      row.isRetired &&
+      profile.socialSecurityAnnualBenefit > 0 &&
+      row.income > 0,
+  );
+  if (socialSecurityRow) {
+    addMilestone(
+      socialSecurityRow.age,
+      "Social Security",
+      `Social Security income is modeled from age ${socialSecurityRow.age}.`,
+    );
+  }
+
+  const firstRmdRow = rows.find((row) => row.isRetired && row.rmd > 0);
+  if (firstRmdRow) {
+    addMilestone(
+      firstRmdRow.age,
+      "First RMD",
+      `Required minimum distributions begin at age ${firstRmdRow.age}.`,
+    );
+  }
+
+  const firstIrmaaRow = rows.find((row) => row.isRetired && row.irmaa > 0);
+  if (firstIrmaaRow) {
+    addMilestone(
+      firstIrmaaRow.age,
+      "First IRMAA year",
+      `A Medicare surcharge is projected starting at age ${firstIrmaaRow.age}.`,
+    );
+  }
+
+  const peakRow = rows.reduce((best, row) =>
+    row.endTotal > best.endTotal ? row : best,
+  );
+  addMilestone(
+    peakRow.age,
+    "Peak portfolio value",
+    `The portfolio reaches its projected peak around age ${peakRow.age}.`,
+  );
+
+  if (summary.depletionAge != null) {
+    addMilestone(
+      summary.depletionAge,
+      "Portfolio depletion",
+      `The plan is projected to run out of invested assets at age ${summary.depletionAge}.`,
+    );
+  }
+
+  const rowsByAge = new Map(rows.map((row) => [row.age, row]));
+  return [...byAge.values()]
+    .map((milestone) => ({
+      ...milestone,
+      label: milestone.labels.join(" • "),
+      detail: milestone.description[0] || "Modeled retirement transition.",
+      projectedValue: rowsByAge.get(milestone.age)?.endTotal ?? null,
+    }))
+    .sort((a, b) => a.age - b.age)
+    .slice(0, 6);
+}
+
+function renderTimelineMilestones(rows) {
+  const container = $("#timeline-milestones");
+  if (!container) return;
+  const milestones = buildTimelineMilestones(rows, workingProfile);
+  if (!milestones.length) {
     container.innerHTML =
-      '<p class="notice-panel">Enter a valid current age and life expectancy to see the timeline chart.</p>';
+      '<div class="milestone"><span>Milestones</span><p>Enter a valid plan to see the major retirement milestones.</p></div>';
     return;
   }
-  const width = 800;
-  const height = 240;
-  const padding = 28;
-  const maxValue = Math.max(1, ...rows.map((row) => row.endTotal));
-  const xStep = (width - padding * 2) / Math.max(1, rows.length - 1);
-  const points = rows
-    .map((row, index) => {
-      const x = padding + index * xStep;
-      const y =
-        height - padding - (row.endTotal / maxValue) * (height - padding * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
+
+  container.innerHTML = milestones
+    .map(
+      (milestone) => `
+        <div class="milestone">
+          <span>Age ${milestone.age}</span>
+          <strong>${milestone.label}</strong>
+          <p>${milestone.detail}</p>
+          ${milestone.projectedValue != null ? `<p class="milestone-value">Projected financial assets: ${money(milestone.projectedValue)}</p>` : ""}
+        </div>
+      `,
+    )
+    .join("");
+}
+
+const COMPOSITION_CATEGORIES = [
+  { key: "cash", label: "Cash reserves", color: "var(--lime)" },
+  { key: "brokerage", label: "Taxable brokerage", color: "var(--blue)" },
+  {
+    key: "preTax",
+    label: "Tax-deferred (401(k) & Traditional IRA)",
+    color: "var(--coral)",
+  },
+  { key: "roth", label: "Roth (tax-free)", color: "var(--teal)" },
+];
+
+function compositionShare(value, total) {
+  return total > 0 ? percent(value / total) : "0.0%";
+}
+
+function compositionPlanningNote(row) {
+  const total = row.endTotal;
+  if (total <= 0) return "No modeled financial assets remain at this age.";
+  const preTaxShare = (row.endBalances.preTax || 0) / total;
+  const cashShare = (row.endBalances.cash || 0) / total;
+  if (row.rmd > 0)
+    return `RMD exposure is active: ${money(row.rmd)} modeled this year from tax-deferred assets.`;
+  if (preTaxShare > 0.5)
+    return "Tax-deferred assets are the majority; future withdrawals may increase taxable income.";
+  if (cashShare < 0.05)
+    return "Cash is a small share of the portfolio; review liquidity for near-term spending.";
+  return "The mix shows taxable, tax-deferred, Roth, and liquid sources for future withdrawals.";
+}
+
+function compositionMilestoneRows(rows) {
+  const selected = [];
+  const add = (row, label) => {
+    if (row && !selected.some((item) => item.row.age === row.age))
+      selected.push({ row, label });
+  };
+  add(rows[0], "Current modeled year");
+  add(
+    rows.find((row) => row.isRetired),
+    "Retirement begins",
+  );
+  add(
+    rows.find((row) => row.rmd > 0),
+    "First RMD year",
+  );
+  add(rows[rows.length - 1], "Life expectancy");
+  return selected;
+}
+
+function renderPortfolioComposition(rows) {
+  const container = $("#timeline-composition");
+  if (!container) return;
+  if (!rows.length) {
+    container.innerHTML =
+      '<p class="notice-panel">Enter a valid current age and life expectancy to see portfolio composition.</p>';
+    return;
+  }
+
+  container.innerHTML = compositionMilestoneRows(rows)
+    .map(({ row, label }) => {
+      const total = row.endTotal;
+      const buckets = COMPOSITION_CATEGORIES.map((category) => {
+        const value = Math.max(0, row.endBalances[category.key] || 0);
+        return `<div class="composition-bucket"><span><i class="legend-swatch" style="background:${category.color}"></i>${category.label}</span><strong>${money(value)}</strong><small>${compositionShare(value, total)}</small></div>`;
+      }).join("");
+      return `<article class="composition-snapshot"><span class="composition-age">Age ${row.age}</span><h3>${label}</h3><p class="composition-total">${money(total)} financial assets</p><div class="composition-buckets">${buckets}</div><p class="composition-note">${compositionPlanningNote(row)}</p></article>`;
     })
-    .join(" ");
-  const retirementIndex = rows.findIndex((row) => row.isRetired);
-  const retirementX =
-    retirementIndex >= 0 ? padding + retirementIndex * xStep : null;
-  const retirementMarker =
-    retirementX != null
-      ? `<line x1="${retirementX.toFixed(1)}" y1="${padding}" x2="${retirementX.toFixed(1)}" y2="${height - padding}" stroke="var(--coral)" stroke-dasharray="4 4" />`
-      : "";
-  container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Projected financial assets by age" class="timeline-svg">
-    <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="var(--line)" />
-    ${retirementMarker}
-    <polyline points="${points}" fill="none" stroke="var(--blue)" stroke-width="2.5" />
-    <text x="${padding}" y="${padding - 10}" class="chart-label">${money(maxValue)}</text>
-    <text x="${padding}" y="${height - padding + 18}" class="chart-label">Age ${rows[0].age}</text>
-    <text x="${width - padding}" y="${height - padding + 18}" class="chart-label" text-anchor="end">Age ${rows[rows.length - 1].age}</text>
-  </svg>`;
+    .join("");
 }
 
 function timelineInputCell(age, field, value, defaultValue, disabled, type) {
@@ -1314,7 +1456,8 @@ function updateTimelineComputedCells(rows) {
 function renderTimeline() {
   const rows = buildTimelineRows(workingProfile);
   renderTimelineTable(rows);
-  renderTimelineChart(rows);
+  renderTimelineMilestones(rows);
+  renderPortfolioComposition(rows);
   renderTimelineSummary(rows);
   return rows;
 }
@@ -1332,7 +1475,8 @@ function handleTimelineTableInput(event) {
   setTimelineOverride(Number(age), field, event.target.value);
   const rows = buildTimelineRows(workingProfile);
   updateTimelineComputedCells(rows);
-  renderTimelineChart(rows);
+  renderTimelineMilestones(rows);
+  renderPortfolioComposition(rows);
   renderTimelineSummary(rows);
 }
 

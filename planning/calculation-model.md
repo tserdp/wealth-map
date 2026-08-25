@@ -123,6 +123,12 @@ spending need = max(0, spending goal + extra withdrawal + IRMAA - net Social Sec
 
 The spending need is withdrawn in order: cash, then brokerage, then pre-tax (grossed up by the pre-tax withdrawal tax rate), then Roth. The RMD amount is always removed from the pre-tax balance for that year, whether or not it was needed for spending. After withdrawals, if the year's real return was positive and cash is below a target buffer (`cash reserve target years * spending goal`), the model sweeps brokerage into cash to refill the buffer — but never sells brokerage to refill the buffer after a down year, to reduce sequence-of-returns risk. Balances are floored at zero; a year that cannot fully fund its spending need simply ends at $0 rather than going negative.
 
+### Timeline portfolio composition
+
+The Timeline presents composition directly within the retirement workbench, not as an investment-performance graph. It shows snapshots at the current modeled year, the first retirement year, the first modeled RMD year when present, and life expectancy. Each snapshot uses that row's `endBalances` and reports dollars and percentage of financial assets for cash, taxable brokerage, tax-deferred accounts (401(k) and Traditional IRA combined), and Roth. Real estate is excluded because the model does not treat it as automatically spendable retirement portfolio assets.
+
+These snapshots help users compare the account sources available for withdrawal sequencing and liquidity planning. A tax-deferred majority signals potential taxable-income exposure; the first RMD snapshot identifies when mandatory distributions begin; the Roth share shows tax-free flexibility; and the cash share shows the modeled short-term reserve. The same annual rows continue to provide RMD, IRMAA, withdrawal, and ending-asset detail, so composition remains connected to retirement sustainability and updates whenever assumptions or timeline overrides change.
+
 ## Social Security claiming-age comparison
 
 The Profile view shows an illustrative, read-only comparison of the annual Social Security benefit at claiming ages 62 through 70, treating the entered benefit as the full-retirement-age (67) amount. Early claims reduce the benefit 5/9% per month for the first 36 months early and 5/12% per month beyond that; delayed claims add 2/3% per month (8% per year) after age 67. This is a single-filer estimate; spousal benefits, actual full-retirement-age variation by birth year, and claiming optimization are not modeled.

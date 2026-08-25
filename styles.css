@@ -165,9 +165,30 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .timeline-summary > div { padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .timeline-summary span { display: block; color: var(--ink-soft); font: 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; }
 .timeline-summary strong { display: block; margin-top: 10px; color: var(--blue); font-size: 20px; }
-.timeline-chart-panel, .timeline-table-panel { padding: 22px; margin-bottom: 14px; }
-.timeline-svg { width: 100%; height: 240px; margin-top: 14px; }
-.chart-label { fill: var(--ink-soft); font: 10px Arial, sans-serif; }
+.timeline-milestones-panel { padding: 22px; margin-bottom: 14px; }
+.timeline-milestones { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 14px; }
+.milestone { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-left: 4px solid var(--blue); border-radius: var(--radius); background: var(--surface); }
+.milestone strong { font-size: 15px; }
+.milestone span { color: var(--ink-soft); font: 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.milestone p { margin: 0; color: var(--ink); font: 12px/1.45 Arial, sans-serif; }
+.milestone-value { font-weight: 600; color: var(--blue); }
+.timeline-composition-panel { padding: 22px; margin-bottom: 14px; }
+.panel-supporting-text { max-width: 720px; margin: 8px 0 0; color: var(--ink-soft); font: 12px/1.5 Arial, sans-serif; }
+.composition-snapshot-grid { display: grid; }
+.timeline-composition-panel > #timeline-composition { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
+.composition-snapshot { min-width: 0; padding: 16px; border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: var(--radius); background: var(--paper); }
+.composition-age { color: var(--ink-soft); font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.composition-snapshot h3 { margin: 5px 0 0; font-size: 16px; }
+.composition-total { margin: 7px 0 13px; color: var(--blue); font: 700 14px Georgia, serif; }
+.composition-buckets { display: grid; gap: 7px; }
+.composition-bucket { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 8px; align-items: center; padding-top: 7px; border-top: 1px solid var(--line); font: 11px Arial, sans-serif; }
+.composition-bucket span { min-width: 0; color: var(--ink-soft); overflow-wrap: anywhere; }
+.composition-bucket strong { font-size: 11px; }
+.composition-bucket small { grid-column: 2; color: var(--ink-soft); font: 10px Arial, sans-serif; }
+.composition-bucket .legend-swatch { margin-right: 5px; vertical-align: -1px; }
+.composition-note { min-height: 50px; margin: 14px 0 0; color: var(--ink-soft); font: 11px/1.45 Arial, sans-serif; }
+.legend-swatch { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.timeline-table-panel { padding: 22px; margin-bottom: 14px; }
 .timeline-table-wrapper { max-height: 560px; overflow: auto; margin-top: 14px; border: 1px solid var(--line); }
 .timeline-table { width: 100%; border-collapse: collapse; font: 12px Arial, sans-serif; white-space: nowrap; }
 .timeline-table thead th { position: sticky; top: 0; z-index: 1; background: #153e5c; color: white; padding: 10px 8px; text-align: left; font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .05em; }
@@ -212,7 +233,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .asset-row { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
   .asset-row input { grid-column: 1 / -1; text-align: left; }
   .real-estate-panel { grid-template-columns: 1fr; }
+  .timeline-composition-panel > #timeline-composition { grid-template-columns: 1fr 1fr; }
   .recommendation-card { grid-template-columns: 38px 1fr; }
   .recommendation-card .priority { grid-column: 2; width: fit-content; }
   .score-footer { flex-direction: column; }
+}
+
+@media (max-width: 480px) {
+  .timeline-composition-panel > #timeline-composition { grid-template-columns: 1fr; }
 }
