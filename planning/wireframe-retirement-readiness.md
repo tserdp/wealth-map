@@ -16,7 +16,7 @@
 | Years to target             20       | Funding gap                    $25,000 |
 +--------------------------------------+-----------------------------------------+
 | SPENDING CAPACITY                                                              |
-| Safe annual spending estimate                                  $74,000        |
+| Safe Spending: sustainable through life expectancy              $74,000        |
 | Retirement spending goal                                       $75,000        |
 | Projected IRMAA (cumulative through life expectancy)             $0          |
 |                                                                                |
@@ -38,3 +38,4 @@
 - A plan that depletes before life expectancy must not appear fully funded because of a target-date-only snapshot.
 - If the target is not reached by life expectancy, show `Beyond life expectancy`.
 - Never describe the score as a probability of success.
+- Provide score context on demand through the information control: it summarizes funding progress, savings, retirement timing, and Timeline sustainability; it updates with assumptions and is a planning aid rather than a guarantee.

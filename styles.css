@@ -68,6 +68,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .panel-label { display: block; color: var(--ink-soft); font: 700 10px Arial, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
 .info-button { width: 16px; height: 16px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--ink-soft); font: 10px Arial, sans-serif; }
+.score-label { position: relative; }
+.score-label .info-button { vertical-align: middle; cursor: pointer; }
+.metric-label-row { display: inline-flex; align-items: center; gap: 6px; }
+.metric-label-row .info-button { margin-left: 2px; }
+.metric-help, .score-help { position: absolute; z-index: 5; top: calc(100% + 8px); left: 0; width: min(290px, calc(100vw - 64px)); padding: 15px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; background: #f7f5ef; color: var(--ink); box-shadow: 0 12px 28px rgba(0,0,0,.2); font: 12px/1.45 Arial, sans-serif; letter-spacing: 0; text-transform: none; }
+.metric-help strong, .score-help strong { color: var(--blue); font-size: 13px; }
+.metric-help p, .score-help p { margin: 8px 0 0; }
+.metric-help ul, .score-help ul { margin: 8px 0 0; padding-left: 17px; }
+.metric-help li + li, .score-help li + li { margin-top: 4px; }
+.metric-help[hidden], .score-help[hidden] { display: none; }
+.has-help { position: relative; }
 
 .readiness-grid { display: grid; grid-template-columns: 1.35fr 1fr 1.2fr; gap: 14px; }
 .hero-score { background: #153e5c; color: white; padding: 25px; border-color: #153e5c; border-top: 5px solid var(--lime); }
@@ -98,6 +109,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .tax-summary-card { margin-top: 14px; padding: 25px; border-top: 4px solid var(--blue); }
 .tax-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 18px; background: var(--line); border: 1px solid var(--line); }
 .tax-summary-grid > div { display: grid; gap: 8px; padding: 15px; background: var(--surface); }
+.tax-summary-item { position: relative; }
 .tax-summary-grid span { color: var(--ink-soft); font: 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; }
 .tax-summary-grid strong { color: var(--blue); font-size: 20px; }
 .tax-summary-note { margin: 16px 0 0; color: var(--ink-soft); font: 11px/1.5 Arial, sans-serif; }

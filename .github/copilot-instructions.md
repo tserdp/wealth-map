@@ -105,6 +105,7 @@ Keep calculation functions separate from rendering functions and make them deter
 - Annual surplus = total annual income - current annual expenses.
 - Annual savings rate = annual savings / total annual income, with zero-income handling.
 - Required retirement assets = retirement spending goal / safe withdrawal rate.
+- Safe Spending = the maximum annual retirement spending goal that leaves the shared Timeline solvent through life expectancy when rerun with candidate spending levels; it must not be a separate safe-withdrawal-rate snapshot formula.
 - Projected assets at retirement use the Timeline's target-year account balances after the accumulation model and the same after-tax treatment used by the retirement engine. Required assets are the minimum after-tax target-year portfolio that remains solvent through life expectancy when rerun through the same Timeline retirement rows.
 - Use a zero-return branch to avoid division by zero.
 - Do not include real estate in spendable retirement portfolio projections unless explicitly labeled as a separate assumption.

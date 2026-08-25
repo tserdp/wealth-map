@@ -79,14 +79,14 @@ The Readiness page's `Projected NIIT` is the cumulative projected net investment
 
 The Readiness page's `Projected IRMAA` is the cumulative projected Medicare income-related surcharge across all retired rows returned by `buildTimelineRows()`, through life expectancy. It sums each row's existing `irmaa` value from `timelineSummary()` and must not use a single-year snapshot, the retirement-age value, or a separate IRMAA calculation. The annual row value is triggered by taxable Social Security plus RMD exceeding the editable IRMAA income threshold and uses the editable annual surcharge. Therefore projected balances, RMDs, Social Security taxability and benefit, retirement and life-expectancy ages, spending, return, inflation, timeline overrides, withdrawal behavior, and the IRMAA assumptions can affect the total. The value is an illustrative estimate, not an official Medicare premium determination; use the Timeline for annual amounts and timing. Future IRMAA model changes must flow through the existing timeline engine so this Readiness summary remains reconciled with detailed projections.
 
+The Readiness page's `Safe Spending` value is the maximum annual retirement spending goal that remains sustainable from the target retirement year through life expectancy. The calculation searches for that amount by changing only `retirementAnnualSpendingGoal` on a cloned profile and rerunning `buildTimelineRows()` for each trial. A trial is sustainable only when the Timeline has no retired row ending at zero, so the result uses the same withdrawal order, cash-reserve rule, returns, taxes, Social Security, RMDs, IRMAA, NIIT, Roth conversions, and timeline overrides as the detailed projection. It is expressed in the model's real-dollar basis and is an illustrative estimate, not a guarantee or advice. If even zero planned spending cannot avoid depletion because of other modeled withdrawals or assumptions, Safe Spending is `$0`.
+
+The configurable safe withdrawal rate remains part of the required-assets and readiness assumptions. It does not replace the Timeline-based Safe Spending calculation and should not be interpreted as a guarantee of sustainable spending.
+
 ```text
-portfolio spending need = max(0, retirement spending goal - net Social Security)
-gross portfolio spending need = portfolio spending need / (1 - pre-tax withdrawal tax rate)
-required retirement assets = (gross portfolio spending need + IRMAA surcharge)
-                           / safe withdrawal rate
-funding gap = required retirement assets - after-tax projected assets
-safe annual spending = after-tax projected assets * safe withdrawal rate
-                       + net Social Security - IRMAA surcharge
+trial spending goal = candidate annual retirement spending amount
+Safe Spending = maximum trial spending goal for which
+                Timeline(candidate profile).depletionAge is null
 ```
 
 The Readiness funding comparison uses one planning philosophy for both headline values: `Projected Assets` is the after-tax value of the account balances at the beginning of the target retirement year, and `Required Assets` is the minimum after-tax target-year portfolio that remains solvent through the configured life expectancy. The required value is found by scaling the target-year account mix and repeatedly running the same retirement rows used by the Timeline until no retired row depletes. It therefore includes the selected spending, return, inflation, taxes, Social Security, RMD, IRMAA, cash-reserve, withdrawal-order, and timeline-override assumptions. A positive funding gap means the target-year portfolio is below the long-horizon sustainable threshold; a negative gap is shown as a projected surplus.
@@ -95,7 +95,7 @@ The Timeline is the source of truth for both values. Its target-age row supplies
 
 The expected retirement age is the first age from current age through life expectancy where the projected after-tax portfolio meets the retirement target used for that age. Otherwise, the app reports `Beyond life expectancy`. A plan that depletes before life expectancy cannot receive an executive-summary assessment of full funding, even when its target-year snapshot appears large enough under a single-year withdrawal-rate calculation.
 
-The Retirement Health Score is a heuristic, not a probability:
+The Retirement Health Score is the primary executive summary indicator for the Readiness page. It is a high-level planning aid that combines four ideas users can act on: progress toward the sustainable retirement funding requirement, current savings progress, timing relative to the target retirement age, and whether the Timeline remains solvent through life expectancy. It automatically recalculates when the shared profile, asset, income, spending, tax, return, retirement, or timeline assumptions change. It is a heuristic, not a guarantee, probability, or prediction of retirement outcomes:
 
 ```text
 funding component = clamp(projected assets / required assets, 0, 1) * 60

@@ -186,7 +186,7 @@ The prototype may display educational withdrawal-order context, but must not cla
 - Projected after-tax retirement assets at the beginning of the target retirement year
 - Required after-tax retirement assets at the beginning of the target retirement year to remain solvent through life expectancy
 - Funding gap or surplus
-- Safe annual spending estimate based on the safe withdrawal rate
+- Safe annual spending estimate that remains sustainable through life expectancy under the shared retirement projection engine
 - A short explanation of the result and its assumptions
 
 **Prototype behavior:** Derive all values from the current shared client-side state and calculation rules. Recalculate after every valid input change. Use a prominent but restrained visual treatment for the score and status.
@@ -262,7 +262,7 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - FR8: The app must calculate a funding gap or surplus.
 - FR9: The app must calculate and display a Retirement Health Score from 0 to 100.
 - FR10: The app must classify readiness as On Track, Slightly Behind, or Major Shortfall.
-- FR11: The app must estimate a sustainable annual spending amount using a configurable safe withdrawal rate.
+- FR11: The app must estimate Safe Spending as the maximum annual retirement spending goal that remains sustainable through life expectancy under the shared retirement projection engine. The configurable safe withdrawal rate remains an assumption used by the required-assets calculation, but Safe Spending must not be a separate rule-of-thumb formula.
 - FR12: The app must generate no more than three prioritized recommendations from rule-based conditions.
 - FR13: All pages must use the same underlying dataset and calculations.
 - FR14: The app must display a clear disclaimer that projections are simplified educational estimates.
@@ -391,6 +391,8 @@ Handle a zero return rate without dividing by zero.
 Estimate an expected retirement age by testing future retirement ages until projected assets meet the required target. If the target is not reached by the configured life expectancy, display `Beyond life expectancy` or an equivalent clear state.
 
 ### Retirement Health Score
+
+The Retirement Health Score is the primary executive summary indicator on the Readiness page. It is a concise planning aid that summarizes funding progress, savings progress, retirement timing, and long-term sustainability from the shared retirement projection model. It must update when assumptions change and must be presented as a heuristic planning indicator, not a guarantee, probability, or prediction of retirement outcomes.
 
 Implement a transparent score from 0 to 100 based on:
 

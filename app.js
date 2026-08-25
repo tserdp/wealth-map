@@ -22,6 +22,14 @@ const pageTitles = {
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+const setText = (selector, value) => {
+  const element = $(selector);
+  if (element) element.textContent = String(value);
+};
+const setWidth = (selector, value) => {
+  const element = $(selector);
+  if (element) element.style.width = value;
+};
 const money = (value) =>
   currencyFormatter.format(Number.isFinite(value) ? value : 0);
 const percent = (value) =>
@@ -382,11 +390,6 @@ function calculate(profile) {
         roth: portfolio.roth,
         cash: portfolio.cash,
       };
-  const retirement = retirementNeed(
-    profile,
-    portfolio,
-    profile.targetRetirementAge,
-  );
   const projectedAssets = afterTaxAssetsFromBalances(
     profile,
     projectedRetirementBalances,
@@ -463,10 +466,7 @@ function calculate(profile) {
     expectedRetirementAge,
     score,
     status,
-    safeSpending:
-      projectedAssets * profile.safeWithdrawalRate +
-      retirement.netSocialSecurity -
-      retirement.irmaa,
+    safeSpending: sustainableAnnualSpending(profile),
     currentFederalTax: contributions.currentFederalTax,
     currentStateTax: contributions.currentStateTax,
     projectedConversionTax: portfolio.conversionTax,
@@ -829,6 +829,31 @@ function requiredRetirementAssets(profile, startingBalances) {
     roth: allocation.roth * high,
     cash: allocation.cash * high,
   });
+}
+
+function sustainableAnnualSpending(profile) {
+  const isSustainable = (spendingGoal) => {
+    const spendingProfile = {
+      ...profile,
+      retirementAnnualSpendingGoal: spendingGoal,
+    };
+    const rows = buildTimelineRows(spendingProfile);
+    return timelineSummary(rows, spendingProfile).depletionAge == null;
+  };
+
+  if (!isSustainable(0)) return 0;
+
+  let high = Math.max(1000, numberValue(profile.retirementAnnualSpendingGoal));
+  while (isSustainable(high) && high < 1048576) high *= 2;
+  if (isSustainable(high)) return high;
+
+  let low = 0;
+  for (let iteration = 0; iteration < 40; iteration += 1) {
+    const middle = (low + high) / 2;
+    if (isSustainable(middle)) low = middle;
+    else high = middle;
+  }
+  return low;
 }
 
 function inputConfig() {
@@ -1313,54 +1338,62 @@ function handleTimelineTableInput(event) {
 
 function renderMetrics() {
   const metrics = calculate(workingProfile);
-  $("#sidebar-name").textContent = workingProfile.name || "Unnamed plan";
-  $("#sidebar-timeline").textContent =
-    `Age ${workingProfile.currentAge} → Retire ${workingProfile.targetRetirementAge}`;
-  $("#score-value").textContent = metrics.score;
-  $("#score-bar").style.width = `${metrics.score}%`;
-  $("#score-status").textContent = metrics.status;
-  $("#readiness-status").textContent = metrics.status;
-  $("#readiness-status").className =
-    `status-pill ${metrics.status === "On Track" ? "" : "neutral"}`;
-  $("#target-age").textContent = workingProfile.targetRetirementAge;
-  $("#expected-age").textContent =
-    metrics.expectedRetirementAge ?? "Beyond life expectancy";
-  $("#years-to-target").textContent = metrics.yearsToTarget;
-  $("#projected-assets").textContent = money(metrics.projectedAssets);
-  $("#required-assets").textContent = Number.isFinite(metrics.requiredAssets)
-    ? money(metrics.requiredAssets)
-    : "Unavailable";
-  $("#funding-label").textContent =
-    metrics.fundingDelta > 0 ? "Funding gap" : "Projected surplus";
-  $("#funding-gap").textContent = money(Math.abs(metrics.fundingDelta));
-  $("#safe-spending").textContent = money(metrics.safeSpending);
-  $("#spending-goal").textContent = money(
-    workingProfile.retirementAnnualSpendingGoal,
+  setText("#sidebar-name", workingProfile.name || "Unnamed plan");
+  setText(
+    "#sidebar-timeline",
+    `Age ${workingProfile.currentAge} → Retire ${workingProfile.targetRetirementAge}`,
   );
-  $("#financial-assets-total").textContent = money(metrics.financialAssets);
-  $("#financial-assets-total-bottom").textContent = money(
-    metrics.financialAssets,
+  setText("#score-value", metrics.score);
+  setWidth("#score-bar", `${metrics.score}%`);
+  setText("#score-status", metrics.status);
+  setText("#readiness-status", metrics.status);
+  const readinessStatus = $("#readiness-status");
+  if (readinessStatus) {
+    readinessStatus.className = `status-pill ${metrics.status === "On Track" ? "" : "neutral"}`;
+  }
+  setText("#target-age", workingProfile.targetRetirementAge);
+  setText(
+    "#expected-age",
+    metrics.expectedRetirementAge ?? "Beyond life expectancy",
   );
-  $("#total-assets").textContent = money(metrics.totalAssets);
-  $("#total-income").textContent = money(metrics.totalIncome);
-  $("#annual-surplus").textContent = money(metrics.surplus);
-  $("#savings-rate").textContent = percent(metrics.savingsRate);
-  $("#employee-savings").textContent = money(metrics.employeeSavings);
-  $("#employer-match").textContent = money(metrics.employerFourOhOneKMatch);
-  $("#retirement-contributions").textContent = money(
-    metrics.totalRetirementContributions,
+  setText("#years-to-target", metrics.yearsToTarget);
+  setText("#projected-assets", money(metrics.projectedAssets));
+  setText(
+    "#required-assets",
+    Number.isFinite(metrics.requiredAssets)
+      ? money(metrics.requiredAssets)
+      : "Unavailable",
   );
-  $("#current-federal-tax").textContent = money(metrics.currentFederalTax);
-  $("#current-state-tax").textContent = money(metrics.currentStateTax);
-  $("#after-tax-assets").textContent = money(metrics.afterTaxAssets);
-  $("#projected-rmd").textContent = money(metrics.projectedRmd);
-  $("#projected-niit").textContent = money(metrics.projectedNiit);
-  $("#projected-ss-tax").textContent = money(
-    metrics.projectedSocialSecurityTax,
+  setText(
+    "#funding-label",
+    metrics.fundingDelta > 0 ? "Funding gap" : "Projected surplus",
   );
-  $("#projected-irmaa").textContent = money(metrics.projectedIrmaa);
-  $("#readiness-updated").textContent =
-    `Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+  setText("#funding-gap", money(Math.abs(metrics.fundingDelta)));
+  setText("#safe-spending", money(metrics.safeSpending));
+  setText("#spending-goal", money(workingProfile.retirementAnnualSpendingGoal));
+  setText("#financial-assets-total", money(metrics.financialAssets));
+  setText("#financial-assets-total-bottom", money(metrics.financialAssets));
+  setText("#total-assets", money(metrics.totalAssets));
+  setText("#total-income", money(metrics.totalIncome));
+  setText("#annual-surplus", money(metrics.surplus));
+  setText("#savings-rate", percent(metrics.savingsRate));
+  setText("#employee-savings", money(metrics.employeeSavings));
+  setText("#employer-match", money(metrics.employerFourOhOneKMatch));
+  setText(
+    "#retirement-contributions",
+    money(metrics.totalRetirementContributions),
+  );
+  setText("#current-federal-tax", money(metrics.currentFederalTax));
+  setText("#current-state-tax", money(metrics.currentStateTax));
+  setText("#after-tax-assets", money(metrics.afterTaxAssets));
+  setText("#projected-rmd", money(metrics.projectedRmd));
+  setText("#projected-niit", money(metrics.projectedNiit));
+  setText("#projected-ss-tax", money(metrics.projectedSocialSecurityTax));
+  setText("#projected-irmaa", money(metrics.projectedIrmaa));
+  setText(
+    "#readiness-updated",
+    `Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`,
+  );
   renderRecommendations(metrics);
   renderSocialSecuritySchedule();
   renderTimeline();
@@ -1405,6 +1438,42 @@ function closeMenu() {
   $("#scrim").hidden = true;
 }
 
+function closeScoreHelp() {
+  const button = $("#score-help-button");
+  const help = $("#score-help");
+  if (!button || !help) return;
+  help.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+}
+
+function closeMetricHelps() {
+  document.querySelectorAll(".metric-help").forEach((help) => {
+    help.hidden = true;
+    const button = document.getElementById(help.dataset.helpButtonId);
+    if (button) button.setAttribute("aria-expanded", "false");
+  });
+}
+
+function toggleScoreHelp() {
+  const button = $("#score-help-button");
+  const help = $("#score-help");
+  if (!button || !help) return;
+  const isOpen = !help.hidden;
+  help.hidden = isOpen;
+  button.setAttribute("aria-expanded", String(!isOpen));
+}
+
+function toggleMetricHelp(button) {
+  if (!button) return;
+  const targetId = button.dataset.helpTarget;
+  const help = targetId ? document.getElementById(targetId) : null;
+  if (!help) return;
+  const isOpen = !help.hidden;
+  closeMetricHelps();
+  help.hidden = isOpen;
+  button.setAttribute("aria-expanded", String(!isOpen));
+}
+
 function resetSample() {
   workingProfile = cloneSampleProfile();
   renderFormFields();
@@ -1441,8 +1510,34 @@ function init() {
   });
   $("#close-menu").addEventListener("click", closeMenu);
   $("#scrim").addEventListener("click", closeMenu);
+  $("#score-help-button").addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeMetricHelps();
+    toggleScoreHelp();
+  });
+  $("#score-help").addEventListener("click", (event) =>
+    event.stopPropagation(),
+  );
+  document.querySelectorAll(".metric-help-button").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closeScoreHelp();
+      toggleMetricHelp(button);
+    });
+  });
+  document.querySelectorAll(".metric-help").forEach((help) => {
+    help.addEventListener("click", (event) => event.stopPropagation());
+  });
+  document.addEventListener("click", () => {
+    closeScoreHelp();
+    closeMetricHelps();
+  });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeMenu();
+    if (event.key === "Escape") {
+      closeMenu();
+      closeScoreHelp();
+      closeMetricHelps();
+    }
   });
 }
 

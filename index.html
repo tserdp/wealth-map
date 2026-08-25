@@ -64,7 +64,18 @@
             </div>
             <div class="readiness-grid">
               <article class="hero-score panel">
-                <div class="panel-label">Retirement Health Score <button class="info-button" type="button" title="A heuristic based on assets, savings, and timing">i</button></div>
+                <div class="panel-label score-label has-help">Retirement Health Score <button class="info-button metric-help-button" id="score-help-button" type="button" data-help-target="score-help" aria-expanded="false" aria-controls="score-help" aria-label="About the Retirement Health Score">i</button>
+                  <div class="score-help metric-help" id="score-help" role="tooltip" data-help-button-id="score-help-button" hidden>
+                    <strong>About this score</strong>
+                    <p>A simple planning gauge of how close your plan is to meeting retirement goals.</p>
+                    <ul>
+                      <li>Funding progress toward the amount your plan needs</li>
+                      <li>Annual savings and retirement timing</li>
+                      <li>Whether the plan stays funded through life expectancy</li>
+                    </ul>
+                    <p>It updates when assumptions change and is meant for planning, not a promise of future results.</p>
+                  </div>
+                </div>
                 <div class="score-row"><strong id="score-value">92</strong><span>/100</span></div>
                 <div class="score-track"><span id="score-bar"></span></div>
                 <div class="score-footer"><strong id="score-status">On Track</strong><span>Heuristic estimate, not a probability</span></div>
@@ -84,9 +95,14 @@
             </div>
             <div class="two-column-grid">
               <article class="panel spending-card">
-                <div class="panel-label">Spending capacity</div>
+                <div class="panel-label metric-label-row has-help">Safe Spending<button class="info-button metric-help-button" id="safe-spending-help-button" type="button" data-help-target="safe-spending-help" aria-expanded="false" aria-controls="safe-spending-help" aria-label="About safe spending">i</button>
+                  <div class="metric-help" id="safe-spending-help" role="tooltip" data-help-button-id="safe-spending-help-button" hidden>
+                    <strong>Safe Spending</strong>
+                    <p>The annual spending level this plan can likely sustain through life expectancy based on the current retirement model.</p>
+                  </div>
+                </div>
                 <div class="big-metric" id="safe-spending">$0</div>
-                <p>Estimated sustainable annual spending at the selected withdrawal rate.</p>
+                <p>Maximum annual spending that remains sustainable through life expectancy under the Timeline model.</p>
                 <div class="comparison"><span>Retirement spending goal</span><strong id="spending-goal">$0</strong></div>
               </article>
               <article class="panel drivers-card">
@@ -103,10 +119,38 @@
                 <div><span>Current federal tax</span><strong id="current-federal-tax">$0</strong></div>
                 <div><span>Current state tax</span><strong id="current-state-tax">$0</strong></div>
                 <div><span>After-tax projected assets</span><strong id="after-tax-assets">$0</strong></div>
-                <div><span>Projected RMD</span><strong id="projected-rmd">$0</strong></div>
-                <div><span>Projected NIIT</span><strong id="projected-niit">$0</strong></div>
-                <div><span>Projected Social Security Tax</span><strong id="projected-ss-tax">$0</strong></div>
-                <div><span>Projected IRMAA</span><strong id="projected-irmaa">$0</strong></div>
+                <div class="tax-summary-item has-help">
+                  <div class="metric-label-row"><span>Projected RMD</span><button class="info-button metric-help-button" id="rmd-help-button" type="button" data-help-target="rmd-help" aria-expanded="false" aria-controls="rmd-help" aria-label="About projected RMD">i</button></div>
+                  <strong id="projected-rmd">$0</strong>
+                  <div class="metric-help" id="rmd-help" role="tooltip" data-help-button-id="rmd-help-button" hidden>
+                    <strong>Projected RMD</strong>
+                    <p>A rough estimate of the required minimum distributions you may need to take from tax-deferred accounts later in retirement. It is a cumulative planning view, not a single-year tax bill.</p>
+                  </div>
+                </div>
+                <div class="tax-summary-item has-help">
+                  <div class="metric-label-row"><span>Projected NIIT</span><button class="info-button metric-help-button" id="niit-help-button" type="button" data-help-target="niit-help" aria-expanded="false" aria-controls="niit-help" aria-label="About projected NIIT">i</button></div>
+                  <strong id="projected-niit">$0</strong>
+                  <div class="metric-help" id="niit-help" role="tooltip" data-help-button-id="niit-help-button" hidden>
+                    <strong>Projected NIIT</strong>
+                    <p>A rough estimate of the 3.8% net investment income tax that may apply when investment income and income levels are higher. It helps gauge long-term tax drag, not a final tax result.</p>
+                  </div>
+                </div>
+                <div class="tax-summary-item has-help">
+                  <div class="metric-label-row"><span>Projected Social Security Tax</span><button class="info-button metric-help-button" id="ss-tax-help-button" type="button" data-help-target="ss-tax-help" aria-expanded="false" aria-controls="ss-tax-help" aria-label="About projected Social Security tax">i</button></div>
+                  <strong id="projected-ss-tax">$0</strong>
+                  <div class="metric-help" id="ss-tax-help" role="tooltip" data-help-button-id="ss-tax-help-button" hidden>
+                    <strong>Projected Social Security Tax</strong>
+                    <p>A rough estimate of any tax that may apply to part of your Social Security benefits. Benefits can be taxed when combined income exceeds certain levels in retirement.</p>
+                  </div>
+                </div>
+                <div class="tax-summary-item has-help">
+                  <div class="metric-label-row"><span>Projected IRMAA</span><button class="info-button metric-help-button" id="irmaa-help-button" type="button" data-help-target="irmaa-help" aria-expanded="false" aria-controls="irmaa-help" aria-label="About projected IRMAA">i</button></div>
+                  <strong id="projected-irmaa">$0</strong>
+                  <div class="metric-help" id="irmaa-help" role="tooltip" data-help-button-id="irmaa-help-button" hidden>
+                    <strong>Projected IRMAA</strong>
+                    <p>A rough estimate of Medicare premium surcharges that may kick in when income is high. Think of it as a future premium risk, not a final Medicare bill.</p>
+                  </div>
+                </div>
               </div>
               <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable-gains and net investment income tax (NIIT) rates, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, an IRS Uniform Lifetime Table RMD estimate, and IRMAA thresholds. All figures are illustrative estimates, not tax advice.</p>
             </article>
