@@ -105,10 +105,10 @@ Keep calculation functions separate from rendering functions and make them deter
 - Annual surplus = total annual income - current annual expenses.
 - Annual savings rate = annual savings / total annual income, with zero-income handling.
 - Required retirement assets = retirement spending goal / safe withdrawal rate.
-- Projected assets use annual compounding of current financial assets plus end-of-year annual savings contributions.
+- Projected assets at retirement use the Timeline's target-year account balances after the accumulation model and the same after-tax treatment used by the retirement engine. Required assets are the minimum after-tax target-year portfolio that remains solvent through life expectancy when rerun through the same Timeline retirement rows.
 - Use a zero-return branch to avoid division by zero.
 - Do not include real estate in spendable retirement portfolio projections unless explicitly labeled as a separate assumption.
-- Funding gap = required assets - projected assets. Display an absolute projected surplus when the value is negative.
+- Funding gap = long-horizon sustainable required assets - projected assets at retirement. Display an absolute projected surplus when the value is negative. The two values must remain sourced from the same Timeline model and assumptions.
 - Expected retirement age is the first age at which projected assets meet the target; otherwise show `Beyond life expectancy`.
 - The Retirement Health Score is a documented heuristic based on funding progress, savings rate, and timing, clamped to 0-100.
 - The score is not a probability and must never be presented as a Monte Carlo result.

@@ -232,7 +232,6 @@ function projectPortfolio(profile, years) {
   let roth = starting.rothIra;
   let cash = starting.cash;
   let conversionTax = 0;
-  let niitPaid = 0;
   const baseTax = ordinaryIncomeTax(profile, contributions.taxableIncome);
 
   for (let year = 0; year < years; year += 1) {
@@ -243,7 +242,6 @@ function projectPortfolio(profile, years) {
       contributions.taxableIncome,
     );
     brokerage = growth.balance;
-    niitPaid += growth.niit;
     preTax *= 1 + returnRate;
     roth *= 1 + returnRate;
     cash += contributions.cash;
@@ -277,7 +275,6 @@ function projectPortfolio(profile, years) {
     roth,
     cash,
     conversionTax,
-    niitPaid,
     afterTaxAssets:
       brokerage + roth + cash + preTax * (1 - profile.preTaxWithdrawalTaxRate),
   };
@@ -372,19 +369,34 @@ function calculate(profile) {
     profile.targetRetirementAge - profile.currentAge,
   );
   const portfolio = projectPortfolio(profile, yearsToTarget);
+  const timelineRows = buildTimelineRows(profile);
+  const timeline = timelineSummary(timelineRows, profile);
+  const targetRow = timelineRows.find(
+    (row) => row.age === Math.round(numberValue(profile.targetRetirementAge)),
+  );
+  const projectedRetirementBalances = targetRow
+    ? targetRow.startBalances
+    : {
+        brokerage: portfolio.brokerage,
+        preTax: portfolio.preTax,
+        roth: portfolio.roth,
+        cash: portfolio.cash,
+      };
   const retirement = retirementNeed(
     profile,
     portfolio,
     profile.targetRetirementAge,
   );
-  const projectedAssets = portfolio.afterTaxAssets;
-  const requiredAssets = retirement.requiredAssets;
-  const fundingDelta = requiredAssets - projectedAssets;
-  const expectedRetirementAge = findExpectedRetirementAge(
+  const projectedAssets = afterTaxAssetsFromBalances(
     profile,
-    financialAssets,
-    requiredAssets,
+    projectedRetirementBalances,
   );
+  const requiredAssets = requiredRetirementAssets(
+    profile,
+    projectedRetirementBalances,
+  );
+  const fundingDelta = requiredAssets - projectedAssets;
+  const expectedRetirementAge = findExpectedRetirementAge(profile);
   const savingsComponent = Math.min(1, Math.max(0, savingsRate / 0.2));
   const fundingComponent =
     requiredAssets > 0
@@ -404,10 +416,8 @@ function calculate(profile) {
                   profile.lifeExpectancy - profile.targetRetirementAge,
                 ),
           );
-  // Layers the year-by-year timeline (including user overrides) onto the snapshot score:
-  // an early projected depletion age reduces the score beyond the single-point projection.
-  const timelineRows = buildTimelineRows(profile);
-  const timeline = timelineSummary(timelineRows, profile);
+  // A depletion year is already reflected in the horizon-based funding comparison;
+  // retain a separate penalty so the score also communicates how early it occurs.
   const sustainabilityPenalty =
     timeline.depletionAge != null
       ? Math.min(
@@ -460,10 +470,10 @@ function calculate(profile) {
     currentFederalTax: contributions.currentFederalTax,
     currentStateTax: contributions.currentStateTax,
     projectedConversionTax: portfolio.conversionTax,
-    projectedRmd: retirement.rmd,
-    projectedNiit: portfolio.niitPaid,
-    projectedSocialSecurityTax: retirement.socialSecurityTax,
-    projectedIrmaa: retirement.irmaa,
+    projectedRmd: timeline.cumulativeRmd,
+    projectedNiit: timeline.cumulativeNiit,
+    projectedSocialSecurityTax: timeline.cumulativeSocialSecurityTax,
+    projectedIrmaa: timeline.cumulativeIrmaa,
     afterTaxAssets: projectedAssets,
     timelineDepletionAge: timeline.depletionAge,
     timelineIrmaaAge: timeline.firstIrmaaAge,
@@ -474,12 +484,19 @@ function projectAssets(profile, years) {
   return projectPortfolio(profile, years).afterTaxAssets;
 }
 
-function findExpectedRetirementAge(profile, startingAssets, requiredAssets) {
-  if (!Number.isFinite(requiredAssets)) return null;
+function findExpectedRetirementAge(profile) {
   for (let age = profile.currentAge; age <= profile.lifeExpectancy; age += 1) {
     const portfolio = projectPortfolio(profile, age - profile.currentAge);
-    const need = retirementNeed(profile, portfolio, age).requiredAssets;
-    if (portfolio.afterTaxAssets >= need) return age;
+    const balances = {
+      brokerage: portfolio.brokerage,
+      preTax: portfolio.preTax,
+      roth: portfolio.roth,
+      cash: portfolio.cash,
+    };
+    const ageProfile = { ...profile, targetRetirementAge: age };
+    const requiredAssets = requiredRetirementAssets(ageProfile, balances);
+    if (afterTaxAssetsFromBalances(profile, balances) >= requiredAssets)
+      return age;
   }
   return null;
 }
@@ -533,6 +550,7 @@ function buildTimelineRows(profile) {
   for (let age = startAge; age <= endAge; age += 1) {
     const override = timelineOverrideFor(profile, age);
     const isRetired = age >= profile.targetRetirementAge;
+    const startBalances = { brokerage, preTax, roth, cash };
     const startTotal = brokerage + preTax + roth + cash;
 
     const defaultReturnPercent = profile.expectedAnnualReturn * 100;
@@ -566,6 +584,8 @@ function buildTimelineRows(profile) {
     let contribution = 0;
     let withdrawal = 0;
     let rmd = 0;
+    let niit = 0;
+    let rowSocialSecurityTax = 0;
     let rowIrmaa = 0;
     let income = defaultIncome;
 
@@ -582,6 +602,7 @@ function buildTimelineRows(profile) {
         contributions.taxableIncome,
       );
       brokerage = growth.balance;
+      niit = growth.niit;
       preTax *= 1 + realReturn;
       roth *= 1 + realReturn;
 
@@ -624,6 +645,7 @@ function buildTimelineRows(profile) {
         0,
         profile.socialSecurityAnnualBenefit - socialSecurityTax,
       );
+      rowSocialSecurityTax = socialSecurityTax;
       income = netSocialSecurity;
 
       // RMD is based on the prior year-end pre-tax balance, before this year's growth.
@@ -640,6 +662,7 @@ function buildTimelineRows(profile) {
         taxableSocialSecurity + rmd,
       );
       brokerage = growth.balance;
+      niit = growth.niit;
       preTax *= 1 + realReturn;
       roth *= 1 + realReturn;
 
@@ -707,8 +730,11 @@ function buildTimelineRows(profile) {
       contribution,
       withdrawal,
       rmd,
+      niit,
+      socialSecurityTax: rowSocialSecurityTax,
       irmaa: rowIrmaa,
       startTotal,
+      startBalances,
       endTotal,
       overrides: override,
       hasOverride: Object.keys(override).length > 0,
@@ -725,6 +751,10 @@ function timelineSummary(rows, profile) {
       depletionAge: null,
       overriddenYears: 0,
       firstIrmaaAge: null,
+      cumulativeRmd: 0,
+      cumulativeNiit: 0,
+      cumulativeSocialSecurityTax: 0,
+      cumulativeIrmaa: 0,
     };
   }
   const finalAssets = rows[rows.length - 1].endTotal;
@@ -735,7 +765,70 @@ function timelineSummary(rows, profile) {
     depletionAge: depletionRow ? depletionRow.age : null,
     overriddenYears: rows.filter((row) => row.hasOverride).length,
     firstIrmaaAge: irmaaRow ? irmaaRow.age : null,
+    cumulativeRmd: rows.reduce((total, row) => total + row.rmd, 0),
+    cumulativeNiit: rows.reduce((total, row) => total + row.niit, 0),
+    cumulativeSocialSecurityTax: rows.reduce(
+      (total, row) => total + row.socialSecurityTax,
+      0,
+    ),
+    cumulativeIrmaa: rows.reduce((total, row) => total + row.irmaa, 0),
   };
+}
+
+function afterTaxAssetsFromBalances(profile, balances) {
+  return (
+    balances.brokerage +
+    balances.roth +
+    balances.cash +
+    balances.preTax * (1 - profile.preTaxWithdrawalTaxRate)
+  );
+}
+
+function requiredRetirementAssets(profile, startingBalances) {
+  const balanceTotal =
+    startingBalances.brokerage +
+    startingBalances.preTax +
+    startingBalances.roth +
+    startingBalances.cash;
+  const allocation =
+    balanceTotal > 0
+      ? startingBalances
+      : { brokerage: 0, preTax: 0, roth: 0, cash: 1 };
+  const targetAge = Math.round(numberValue(profile.targetRetirementAge));
+  const retirementProfile = (scale) => ({
+    ...profile,
+    currentAge: targetAge,
+    assets: {
+      brokerage: allocation.brokerage * scale,
+      fourOhOneK: allocation.preTax * scale,
+      traditionalIra: 0,
+      rothIra: allocation.roth * scale,
+      cash: allocation.cash * scale,
+      realEstate: 0,
+    },
+  });
+  const isSustainable = (scale) =>
+    timelineSummary(
+      buildTimelineRows(retirementProfile(scale)),
+      retirementProfile(scale),
+    ).depletionAge == null;
+
+  let high = 1;
+  while (!isSustainable(high) && high < 1048576) high *= 2;
+  if (!isSustainable(high)) return Infinity;
+
+  let low = 0;
+  for (let iteration = 0; iteration < 40; iteration += 1) {
+    const middle = (low + high) / 2;
+    if (isSustainable(middle)) high = middle;
+    else low = middle;
+  }
+  return afterTaxAssetsFromBalances(profile, {
+    brokerage: allocation.brokerage * high,
+    preTax: allocation.preTax * high,
+    roth: allocation.roth * high,
+    cash: allocation.cash * high,
+  });
 }
 
 function inputConfig() {

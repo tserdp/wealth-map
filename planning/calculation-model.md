@@ -58,7 +58,7 @@ A negative or zero real return skips the gains tax and NIIT for that year. The 3
 
 For each projected year, the model moves the editable annual Roth conversion amount from pre-tax accounts to the Roth account, limited by the available pre-tax balance. It estimates the incremental federal and state tax caused by that conversion against current ordinary income. The full converted amount moves to Roth; the estimated conversion tax is removed from taxable brokerage. This avoids charging conversion tax twice.
 
-At the target age:
+At the beginning of the target retirement year:
 
 ```text
 after-tax projected assets = brokerage + Roth + cash
@@ -71,6 +71,14 @@ This is an account-level tax-treatment approximation. It does not optimize conve
 
 The model estimates the taxable portion of Social Security from the editable benefit and taxable percentage. It subtracts its simplified tax estimate from the benefit. If the age being evaluated is at or above the editable RMD start age, it divides pre-tax assets by an illustrative IRS Uniform Lifetime Table divisor (ages 72-100, clamped at both ends) to estimate the RMD. The RMD and taxable Social Security can trigger the editable IRMAA surcharge.
 
+The Readiness page's `Projected Social Security Tax` is the cumulative projected Social Security taxation across all retired rows returned by the existing `buildTimelineRows()` engine, through life expectancy. It sums each row's modeled `socialSecurityTax` value rather than showing a single-year snapshot, the tax at retirement age, or a separate Social Security tax engine. The value must remain sourced from the same timeline and tax logic that drive the detailed retirement model so retirement age, life expectancy, RMDs, withdrawals, income assumptions, tax assumptions, Social Security assumptions, timeline overrides, and future enhancements that affect taxation of benefits can influence it. The total is a high-level illustrative estimate of cumulative tax paid on Social Security benefits across retirement; use the Timeline for annual Social Security tax detail and timing.
+
+The Readiness page's `Projected RMD` is the cumulative projected RMD exposure across the retirement horizon. It sums the `rmd` value from every retired row returned by the existing `buildTimelineRows()` engine, from the first modeled RMD year through life expectancy. It must remain sourced from this timeline summary rather than a target-age snapshot, first-year value, or separate RMD calculation. Any input or future model enhancement that changes projected pre-tax balances or the timeline's annual RMD schedule can change this value, including balances, contributions, employer match, Roth conversions, retirement and RMD start ages, life expectancy, income, spending, return, inflation, timeline overrides, and withdrawal behavior. The total is expressed in the model's selected projection basis and represents modeled mandatory distributions, not taxes owed or spendable cash after tax. Use the Timeline for annual RMD detail.
+
+The Readiness page's `Projected NIIT` is the cumulative projected net investment income tax exposure across the full modeled horizon, from the current age through life expectancy. It sums the `niit` value on every row returned by `buildTimelineRows()`, including both accumulation and retirement years, rather than using the target-age portfolio snapshot. It remains sourced from the same timeline engine and the existing `applyBrokerageGrowth()` NIIT calculation, so asset balances, brokerage growth and investment gains, retirement age, life expectancy, tax and income assumptions, timeline overrides, withdrawal behavior, and future changes to the retirement model can change it. The total is an illustrative estimate of modeled NIIT, not an official tax liability or a prediction of actual tax owed; use the Timeline for annual context.
+
+The Readiness page's `Projected IRMAA` is the cumulative projected Medicare income-related surcharge across all retired rows returned by `buildTimelineRows()`, through life expectancy. It sums each row's existing `irmaa` value from `timelineSummary()` and must not use a single-year snapshot, the retirement-age value, or a separate IRMAA calculation. The annual row value is triggered by taxable Social Security plus RMD exceeding the editable IRMAA income threshold and uses the editable annual surcharge. Therefore projected balances, RMDs, Social Security taxability and benefit, retirement and life-expectancy ages, spending, return, inflation, timeline overrides, withdrawal behavior, and the IRMAA assumptions can affect the total. The value is an illustrative estimate, not an official Medicare premium determination; use the Timeline for annual amounts and timing. Future IRMAA model changes must flow through the existing timeline engine so this Readiness summary remains reconciled with detailed projections.
+
 ```text
 portfolio spending need = max(0, retirement spending goal - net Social Security)
 gross portfolio spending need = portfolio spending need / (1 - pre-tax withdrawal tax rate)
@@ -81,7 +89,11 @@ safe annual spending = after-tax projected assets * safe withdrawal rate
                        + net Social Security - IRMAA surcharge
 ```
 
-The expected retirement age is the first age from current age through life expectancy where projected after-tax assets meet that age's required retirement assets. Otherwise, the app reports `Beyond life expectancy`.
+The Readiness funding comparison uses one planning philosophy for both headline values: `Projected Assets` is the after-tax value of the account balances at the beginning of the target retirement year, and `Required Assets` is the minimum after-tax target-year portfolio that remains solvent through the configured life expectancy. The required value is found by scaling the target-year account mix and repeatedly running the same retirement rows used by the Timeline until no retired row depletes. It therefore includes the selected spending, return, inflation, taxes, Social Security, RMD, IRMAA, cash-reserve, withdrawal-order, and timeline-override assumptions. A positive funding gap means the target-year portfolio is below the long-horizon sustainable threshold; a negative gap is shown as a projected surplus.
+
+The Timeline is the source of truth for both values. Its target-age row supplies the projected account balances, and its retirement-year simulation defines whether those balances survive to life expectancy. The Readiness page must not introduce a separate target-date-only forecasting method. Its `Projected assets at retirement` and `Required at retirement for life expectancy` labels make the shared starting point and different role of each value explicit; the Timeline remains the annual detail view.
+
+The expected retirement age is the first age from current age through life expectancy where the projected after-tax portfolio meets the retirement target used for that age. Otherwise, the app reports `Beyond life expectancy`. A plan that depletes before life expectancy cannot receive an executive-summary assessment of full funding, even when its target-year snapshot appears large enough under a single-year withdrawal-rate calculation.
 
 The Retirement Health Score is a heuristic, not a probability:
 
@@ -95,7 +107,7 @@ sustainability penalty = 0 when the timeline never depletes before life expectan
 score = round(clamp(funding + savings + timing - sustainability penalty, 0, 100))
 ```
 
-The sustainability penalty is the only place the year-by-year wealth timeline (see below), rather than the single target-age snapshot, feeds back into the score. Scores of 80-100 are `On Track`, 50-79 are `Slightly Behind`, and 0-49 are `Major Shortfall`.
+The funding component already uses the long-horizon sustainable requirement. The depletion penalty adds severity based on how early a shortfall occurs. Scores of 80-100 are `On Track`, 50-79 are `Slightly Behind`, and 0-49 are `Major Shortfall`.
 
 ## Wealth timeline
 

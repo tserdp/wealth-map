@@ -183,8 +183,8 @@ The prototype may display educational withdrawal-order context, but must not cla
 - Readiness status: On Track, Slightly Behind, or Major Shortfall
 - Target retirement age
 - Expected retirement age
-- Projected retirement assets at target retirement age
-- Required retirement assets at target retirement age
+- Projected after-tax retirement assets at the beginning of the target retirement year
+- Required after-tax retirement assets at the beginning of the target retirement year to remain solvent through life expectancy
 - Funding gap or surplus
 - Safe annual spending estimate based on the safe withdrawal rate
 - A short explanation of the result and its assumptions
@@ -383,7 +383,7 @@ Handle a zero return rate without dividing by zero.
 
 ### Funding gap
 
-- Funding gap = required retirement assets - projected assets.
+- Funding gap = long-horizon sustainable required retirement assets at the target retirement year - projected after-tax assets at the beginning of that year. Both values must be derived from the shared Timeline retirement engine; the Readiness page must not use a separate target-date-only forecasting methodology.
 - If the result is negative, display the absolute value as a projected surplus.
 
 ### Expected retirement age
