@@ -260,9 +260,12 @@ function projectPortfolio(profile, years) {
       contributions.traditionalIra;
     roth += contributions.rothIra;
 
-    const conversion = Math.min(
+    const conversion = recommendedRothConversionAmount(
+      profile,
+      false,
+      profile.currentAge + year,
+      contributions.taxableIncome,
       preTax,
-      Math.max(0, profile.rothConversionAnnualAmount),
     );
     if (conversion > 0) {
       const taxOnConversion = Math.max(
@@ -328,34 +331,165 @@ function retirementNeed(profile, portfolio, age) {
   };
 }
 
-// Illustrative SSA early/delayed claiming reduction, assuming profile.socialSecurityAnnualBenefit
-// is the full retirement age (67) benefit. Single-filer only; no spousal benefit modeling.
-function socialSecurityClaimingSchedule(profile) {
-  const fraBenefit = Math.max(
-    0,
-    numberValue(profile.socialSecurityAnnualBenefit),
-  );
+// Illustrative SSA early/delayed claiming reduction, assuming fraBenefit is the full retirement
+// age (67) benefit. Single-filer only; no spousal benefit modeling.
+function benefitForClaimAge(fraBenefit, claimAge) {
+  if (claimAge < SOCIAL_SECURITY_FULL_RETIREMENT_AGE) {
+    const monthsEarly = (SOCIAL_SECURITY_FULL_RETIREMENT_AGE - claimAge) * 12;
+    const reduction =
+      Math.min(monthsEarly, 36) * (5 / 9 / 100) +
+      Math.max(monthsEarly - 36, 0) * (5 / 12 / 100);
+    return Math.max(0, fraBenefit * (1 - reduction));
+  }
+  if (claimAge > SOCIAL_SECURITY_FULL_RETIREMENT_AGE) {
+    const monthsLate = (claimAge - SOCIAL_SECURITY_FULL_RETIREMENT_AGE) * 12;
+    return Math.max(0, fraBenefit * (1 + monthsLate * (2 / 3 / 100)));
+  }
+  return Math.max(0, fraBenefit);
+}
+
+function socialSecurityClaimingSchedule(fraBenefit) {
   const schedule = [];
   for (let claimAge = 62; claimAge <= 70; claimAge += 1) {
-    let benefit;
-    if (claimAge < SOCIAL_SECURITY_FULL_RETIREMENT_AGE) {
-      const monthsEarly = (SOCIAL_SECURITY_FULL_RETIREMENT_AGE - claimAge) * 12;
-      const reduction =
-        Math.min(monthsEarly, 36) * (5 / 9 / 100) +
-        Math.max(monthsEarly - 36, 0) * (5 / 12 / 100);
-      benefit = fraBenefit * (1 - reduction);
-    } else if (claimAge > SOCIAL_SECURITY_FULL_RETIREMENT_AGE) {
-      const monthsLate = (claimAge - SOCIAL_SECURITY_FULL_RETIREMENT_AGE) * 12;
-      benefit = fraBenefit * (1 + monthsLate * (2 / 3 / 100));
-    } else {
-      benefit = fraBenefit;
-    }
-    schedule.push({ claimAge, annualBenefit: Math.max(0, benefit) });
+    schedule.push({
+      claimAge,
+      annualBenefit: benefitForClaimAge(fraBenefit, claimAge),
+    });
   }
   return schedule;
 }
 
-function calculate(profile) {
+// Illustrative replacement-rate estimate used only when the Social Security strategy is "auto".
+function estimatedSocialSecurityFraBenefit(profile) {
+  return Math.max(
+    0,
+    Math.round((numberValue(profile.annualSalary) * 0.35) / 500) * 500,
+  );
+}
+
+// Searches claim ages 62-70 with the shared timeline engine and picks the one that keeps the
+// plan solvent longest (or, among solvent ages, leaves the most assets at life expectancy).
+function recommendedSocialSecurityClaimAge(profile, fraBenefit) {
+  let best = null;
+  for (let claimAge = 62; claimAge <= 70; claimAge += 1) {
+    const trialProfile = {
+      ...profile,
+      socialSecurityStrategy: "manual",
+      socialSecurityAnnualBenefit: fraBenefit,
+      socialSecurityClaimAge: claimAge,
+    };
+    const summary = timelineSummary(
+      buildTimelineRows(trialProfile),
+      trialProfile,
+    );
+    const candidate = {
+      claimAge,
+      depletionAge: summary.depletionAge,
+      finalAssets: summary.finalAssets,
+    };
+    const candidateBeatsBest =
+      !best ||
+      (candidate.depletionAge == null && best.depletionAge != null) ||
+      (candidate.depletionAge == null &&
+        best.depletionAge == null &&
+        candidate.finalAssets > best.finalAssets) ||
+      (candidate.depletionAge != null &&
+        best.depletionAge != null &&
+        candidate.depletionAge > best.depletionAge);
+    if (candidateBeatsBest) best = candidate;
+  }
+  return best ? best.claimAge : SOCIAL_SECURITY_FULL_RETIREMENT_AGE;
+}
+
+// Resolves the Social Security strategy into concrete numbers. "Manual" reads the editable
+// fields directly; "auto" estimates a benefit and searches for a recommended claiming age using
+// the same timeline engine, so no separate planning model is introduced.
+function resolveSocialSecurityPlan(profile) {
+  if (profile.socialSecurityStrategy === "manual") {
+    const claimAge = Math.min(
+      70,
+      Math.max(
+        62,
+        Math.round(numberValue(profile.socialSecurityClaimAge)) ||
+          SOCIAL_SECURITY_FULL_RETIREMENT_AGE,
+      ),
+    );
+    const fraBenefit = Math.max(
+      0,
+      numberValue(profile.socialSecurityAnnualBenefit),
+    );
+    return {
+      source: "manual",
+      fraBenefit,
+      claimAge,
+      annualBenefit: benefitForClaimAge(fraBenefit, claimAge),
+    };
+  }
+  const fraBenefit = estimatedSocialSecurityFraBenefit(profile);
+  const claimAge = recommendedSocialSecurityClaimAge(profile, fraBenefit);
+  return {
+    source: "auto",
+    fraBenefit,
+    claimAge,
+    annualBenefit: benefitForClaimAge(fraBenefit, claimAge),
+  };
+}
+
+// Collapses the Social Security strategy into concrete manual-equivalent fields so the timeline
+// engine never has to re-run the claim-age search recursively.
+function resolveEffectiveProfile(profile) {
+  const ssPlan = resolveSocialSecurityPlan(profile);
+  return {
+    effectiveProfile: {
+      ...profile,
+      socialSecurityStrategy: "manual",
+      socialSecurityAnnualBenefit: ssPlan.fraBenefit,
+      socialSecurityClaimAge: ssPlan.claimAge,
+    },
+    ssPlan,
+  };
+}
+
+// Illustrative Roth-conversion bracket-fill ceiling (top of the 22% federal bracket).
+function rothConversionCeiling(profile) {
+  const brackets =
+    ILLUSTRATIVE_FEDERAL_BRACKETS[profile.filingStatus] ||
+    ILLUSTRATIVE_FEDERAL_BRACKETS.Single;
+  const target = brackets.find(([, rate]) => rate === 0.22);
+  return target ? target[0] : brackets[0][0];
+}
+
+// Model-generated Roth conversion amount for a given year. Manual strategy uses the editable
+// annual amount every year. Auto strategy only converts during the classic pre-RMD window
+// (retirement through the year before RMDs start), filling headroom up to an illustrative 22%
+// federal bracket ceiling, limited by the available pre-tax balance.
+function recommendedRothConversionAmount(
+  profile,
+  isRetired,
+  age,
+  baselineOrdinaryIncome,
+  availablePreTax,
+) {
+  if (profile.rothConversionStrategy !== "auto") {
+    return Math.min(
+      Math.max(0, availablePreTax),
+      Math.max(0, numberValue(profile.rothConversionAnnualAmount)),
+    );
+  }
+  if (!isRetired || age >= profile.rmdStartAge) return 0;
+  const ceiling = rothConversionCeiling(profile);
+  const headroom = Math.max(
+    0,
+    ceiling -
+      Math.max(0, baselineOrdinaryIncome - profile.federalStandardDeduction),
+  );
+  return Math.min(Math.max(0, availablePreTax), headroom);
+}
+
+function calculate(rawProfile) {
+  // Resolve model-generated strategies (currently Social Security claiming) once, up front, so
+  // every downstream calculation shares the same concrete assumptions as the Timeline.
+  const { effectiveProfile: profile, ssPlan } = resolveEffectiveProfile(rawProfile);
   const assets = profile.assets;
   const financialAssets =
     assets.brokerage +
@@ -477,6 +611,8 @@ function calculate(profile) {
     afterTaxAssets: projectedAssets,
     timelineDepletionAge: timeline.depletionAge,
     timelineIrmaaAge: timeline.firstIrmaaAge,
+    socialSecurityPlan: ssPlan,
+    rothConversionWindowEndAge: profile.rmdStartAge,
   };
 }
 
@@ -587,6 +723,12 @@ function buildTimelineRows(profile) {
     let niit = 0;
     let rowSocialSecurityTax = 0;
     let rowIrmaa = 0;
+    let rowConversion = 0;
+    let rowConversionTax = 0;
+    let rowWithdrawalSources = null;
+    let rowSocialSecurityGross = 0;
+    let rowSpending = 0;
+    let rowNetCashFlow = 0;
     let income = defaultIncome;
 
     if (!isRetired) {
@@ -616,10 +758,14 @@ function buildTimelineRows(profile) {
       roth += contributions.rothIra;
       contribution =
         contributions.employeeSavings + contributions.employerFourOhOneKMatch;
+      rowSpending = defaultExpenses;
 
-      const conversion = Math.min(
+      const conversion = recommendedRothConversionAmount(
+        profile,
+        false,
+        age,
+        contributions.taxableIncome,
         preTax,
-        Math.max(0, profile.rothConversionAnnualAmount),
       );
       if (conversion > 0) {
         const baseTax = ordinaryIncomeTax(profile, contributions.taxableIncome);
@@ -632,20 +778,24 @@ function buildTimelineRows(profile) {
         roth += conversion;
         brokerage = Math.max(0, brokerage - taxOnConversion);
       }
+      rowConversion = conversion;
+      rowNetCashFlow = income - defaultExpenses - contribution;
     } else {
-      const taxableSocialSecurity =
-        profile.socialSecurityAnnualBenefit *
-        profile.socialSecurityTaxablePercent;
+      const ssActive = age >= numberValue(profile.socialSecurityClaimAge);
+      const taxableSocialSecurity = ssActive
+        ? profile.socialSecurityAnnualBenefit *
+          profile.socialSecurityTaxablePercent
+        : 0;
       const socialSecurityTax = Math.max(
         0,
         ordinaryIncomeTax(profile, taxableSocialSecurity) -
           ordinaryIncomeTax(profile, 0),
       );
-      const netSocialSecurity = Math.max(
-        0,
-        profile.socialSecurityAnnualBenefit - socialSecurityTax,
-      );
+      const netSocialSecurity = ssActive
+        ? Math.max(0, profile.socialSecurityAnnualBenefit - socialSecurityTax)
+        : 0;
       rowSocialSecurityTax = socialSecurityTax;
+      rowSocialSecurityGross = ssActive ? profile.socialSecurityAnnualBenefit : 0;
       income = netSocialSecurity;
 
       // RMD is based on the prior year-end pre-tax balance, before this year's growth.
@@ -665,6 +815,34 @@ function buildTimelineRows(profile) {
       niit = growth.niit;
       preTax *= 1 + realReturn;
       roth *= 1 + realReturn;
+
+      // RMD is a forced distribution; only the balance remaining after it is available to convert.
+      const preTaxAfterRmd = Math.max(0, preTax - rmd);
+      const conversion = recommendedRothConversionAmount(
+        profile,
+        true,
+        age,
+        taxableSocialSecurity + rmd,
+        preTaxAfterRmd,
+      );
+      let conversionTax = 0;
+      if (conversion > 0) {
+        const baseTax = ordinaryIncomeTax(profile, taxableSocialSecurity + rmd);
+        conversionTax = Math.max(
+          0,
+          ordinaryIncomeTax(
+            profile,
+            taxableSocialSecurity + rmd + conversion,
+          ) - baseTax,
+        );
+        preTax = preTaxAfterRmd - conversion;
+        roth += conversion;
+        brokerage = Math.max(0, brokerage - conversionTax);
+      } else {
+        preTax = preTaxAfterRmd;
+      }
+      rowConversion = conversion;
+      rowConversionTax = conversionTax;
 
       const spendingGoal =
         override.expenses != null
@@ -694,9 +872,21 @@ function buildTimelineRows(profile) {
       const fromRoth = Math.min(roth, Math.max(0, remaining));
       roth -= fromRoth;
 
-      preTax = Math.max(0, preTax - rmd);
       withdrawal = fromCash + fromBrokerage + fromPreTaxGross + fromRoth + rmd;
       rowIrmaa = irmaa;
+      rowWithdrawalSources = {
+        cash: fromCash,
+        brokerage: fromBrokerage,
+        preTax: fromPreTaxGross,
+        roth: fromRoth,
+        rmd,
+      };
+      rowSpending = spendingGoal + extraWithdrawal;
+      rowNetCashFlow =
+        netSocialSecurity +
+        withdrawal -
+        (spendingGoal + extraWithdrawal + irmaa) -
+        rowConversionTax;
 
       // Sequence-of-returns guard: refill the cash reserve from brokerage only in up years.
       const targetCashBuffer =
@@ -733,7 +923,13 @@ function buildTimelineRows(profile) {
       rmd,
       niit,
       socialSecurityTax: rowSocialSecurityTax,
+      socialSecurityGrossBenefit: rowSocialSecurityGross,
       irmaa: rowIrmaa,
+      rothConversion: rowConversion,
+      rothConversionTax: rowConversionTax,
+      withdrawalSources: rowWithdrawalSources,
+      spending: rowSpending,
+      netCashFlow: rowNetCashFlow,
       startTotal,
       startBalances,
       endBalances,
@@ -757,11 +953,16 @@ function timelineSummary(rows, profile) {
       cumulativeNiit: 0,
       cumulativeSocialSecurityTax: 0,
       cumulativeIrmaa: 0,
+      cumulativeRothConversion: 0,
+      cumulativeRothConversionTax: 0,
+      firstConversionAge: null,
+      lastConversionAge: null,
     };
   }
   const finalAssets = rows[rows.length - 1].endTotal;
   const depletionRow = rows.find((row) => row.isRetired && row.endTotal <= 0);
   const irmaaRow = rows.find((row) => row.isRetired && row.irmaa > 0);
+  const conversionRows = rows.filter((row) => row.rothConversion > 0);
   return {
     finalAssets,
     depletionAge: depletionRow ? depletionRow.age : null,
@@ -774,6 +975,18 @@ function timelineSummary(rows, profile) {
       0,
     ),
     cumulativeIrmaa: rows.reduce((total, row) => total + row.irmaa, 0),
+    cumulativeRothConversion: rows.reduce(
+      (total, row) => total + row.rothConversion,
+      0,
+    ),
+    cumulativeRothConversionTax: rows.reduce(
+      (total, row) => total + row.rothConversionTax,
+      0,
+    ),
+    firstConversionAge: conversionRows.length ? conversionRows[0].age : null,
+    lastConversionAge: conversionRows.length
+      ? conversionRows[conversionRows.length - 1].age
+      : null,
   };
 }
 
@@ -912,20 +1125,6 @@ function inputConfig() {
         22,
       ],
       [
-        "rothConversionAnnualAmount",
-        "Annual Roth conversion",
-        "currency",
-        "per year",
-        0,
-      ],
-      [
-        "socialSecurityAnnualBenefit",
-        "Annual Social Security benefit",
-        "currency",
-        "per year",
-        0,
-      ],
-      [
         "socialSecurityTaxablePercent",
         "Social Security taxable percentage",
         "percent",
@@ -959,6 +1158,53 @@ function inputConfig() {
         "Annual IRMAA surcharge",
         "currency",
         "per year",
+        0,
+      ],
+    ],
+    // Rendered on the Timeline page: lets users override the model-generated Social Security
+    // and Roth conversion strategies without duplicating the fields on the Profile page.
+    strategy: [
+      [
+        "socialSecurityStrategy",
+        "Social Security strategy",
+        "select",
+        "",
+        "auto",
+        [
+          ["auto", "Model-recommended claiming age"],
+          ["manual", "Manual benefit and claiming age"],
+        ],
+      ],
+      [
+        "socialSecurityAnnualBenefit",
+        "Manual full-retirement-age (67) benefit",
+        "currency",
+        "per year, used only when strategy is Manual",
+        0,
+      ],
+      [
+        "socialSecurityClaimAge",
+        "Manual claiming age",
+        "number",
+        "years, 62-70, used only when strategy is Manual",
+        67,
+      ],
+      [
+        "rothConversionStrategy",
+        "Roth conversion strategy",
+        "select",
+        "",
+        "auto",
+        [
+          ["auto", "Model-recommended conversions"],
+          ["manual", "Manual annual amount"],
+        ],
+      ],
+      [
+        "rothConversionAnnualAmount",
+        "Manual annual Roth conversion",
+        "currency",
+        "per year, used only when strategy is Manual",
         0,
       ],
     ],
@@ -1088,11 +1334,13 @@ function renderFormFields() {
     ["#profile-fields", config.profile],
     ["#assumption-fields", config.assumptions],
     ["#tax-fields", config.tax],
+    ["#strategy-fields", config.strategy],
     ["#income-fields", config.income],
     ["#expense-fields", config.expenses],
     ["#contribution-fields", config.contributions],
   ].forEach(([selector, fields]) => {
     const container = $(selector);
+    if (!container) return;
     container.replaceChildren(...fields.map(createField));
   });
 }
@@ -1113,15 +1361,18 @@ function renderAssetFields() {
   $("#realEstate").dataset.type = "currency";
 }
 
-function renderSocialSecuritySchedule() {
+function renderSocialSecuritySchedule(ssPlan) {
   const body = $("#ss-claiming-table-body");
   if (!body) return;
-  const schedule = socialSecurityClaimingSchedule(workingProfile);
+  const schedule = socialSecurityClaimingSchedule(ssPlan.fraBenefit);
   body.innerHTML = schedule
-    .map(
-      (row) =>
-        `<tr class="${row.claimAge === SOCIAL_SECURITY_FULL_RETIREMENT_AGE ? "ss-fra-row" : ""}"><td>${row.claimAge}</td><td>${money(row.annualBenefit)}</td><td>${money(row.annualBenefit / 12)}</td></tr>`,
-    )
+    .map((row) => {
+      const classes = [];
+      if (row.claimAge === SOCIAL_SECURITY_FULL_RETIREMENT_AGE)
+        classes.push("ss-fra-row");
+      if (row.claimAge === ssPlan.claimAge) classes.push("ss-recommended-row");
+      return `<tr class="${classes.join(" ")}"><td>${row.claimAge}${row.claimAge === ssPlan.claimAge ? " ★" : ""}</td><td>${money(row.annualBenefit)}</td><td>${money(row.annualBenefit / 12)}</td></tr>`;
+    })
     .join("");
 }
 
@@ -1222,7 +1473,7 @@ function renderTimelineSummary(rows) {
   $("#timeline-overridden-count").textContent = String(summary.overriddenYears);
 }
 
-function buildTimelineMilestones(rows, profile) {
+function buildTimelineMilestones(rows, profile, ssPlan) {
   if (!rows.length) return [];
 
   const summary = timelineSummary(rows, profile);
@@ -1245,18 +1496,35 @@ function buildTimelineMilestones(rows, profile) {
     );
   }
 
-  const socialSecurityRow = rows.find(
-    (row) =>
-      row.isRetired &&
-      profile.socialSecurityAnnualBenefit > 0 &&
-      row.income > 0,
-  );
-  if (socialSecurityRow) {
-    addMilestone(
-      socialSecurityRow.age,
-      "Social Security",
-      `Social Security income is modeled from age ${socialSecurityRow.age}.`,
+  if (ssPlan && ssPlan.fraBenefit > 0) {
+    const socialSecurityRow = rows.find(
+      (row) => row.isRetired && row.socialSecurityGrossBenefit > 0,
     );
+    if (socialSecurityRow) {
+      addMilestone(
+        socialSecurityRow.age,
+        "Social Security begins",
+        `Social Security begins at age ${socialSecurityRow.age} (${ssPlan.source === "auto" ? "model-recommended" : "manual"} claiming age): ${money(ssPlan.annualBenefit)}/year.`,
+      );
+    }
+  }
+
+  const conversionRows = rows.filter((row) => row.rothConversion > 0);
+  if (conversionRows.length) {
+    const firstAge = conversionRows[0].age;
+    const lastAge = conversionRows[conversionRows.length - 1].age;
+    addMilestone(
+      firstAge,
+      "Roth conversions begin",
+      `Model-generated Roth conversions begin at age ${firstAge}.`,
+    );
+    if (lastAge !== firstAge) {
+      addMilestone(
+        lastAge,
+        "Roth conversions end",
+        `Modeled Roth conversions end at age ${lastAge}, ahead of RMDs.`,
+      );
+    }
   }
 
   const firstRmdRow = rows.find((row) => row.isRetired && row.rmd > 0);
@@ -1274,6 +1542,19 @@ function buildTimelineMilestones(rows, profile) {
       firstIrmaaRow.age,
       "First IRMAA year",
       `A Medicare surcharge is projected starting at age ${firstIrmaaRow.age}.`,
+    );
+  }
+
+  const transitionRow = rows.find((row) => {
+    if (!row.isRetired || !row.withdrawalSources) return false;
+    const { cash, brokerage, preTax, roth } = row.withdrawalSources;
+    return preTax + roth > 0 && preTax + roth > cash + brokerage;
+  });
+  if (transitionRow) {
+    addMilestone(
+      transitionRow.age,
+      "Withdrawal source shifts",
+      `Modeled spending begins relying primarily on tax-deferred or Roth withdrawals at age ${transitionRow.age}.`,
     );
   }
 
@@ -1303,13 +1584,13 @@ function buildTimelineMilestones(rows, profile) {
       projectedValue: rowsByAge.get(milestone.age)?.endTotal ?? null,
     }))
     .sort((a, b) => a.age - b.age)
-    .slice(0, 6);
+    .slice(0, 8);
 }
 
-function renderTimelineMilestones(rows) {
+function renderTimelineMilestones(rows, profile, ssPlan) {
   const container = $("#timeline-milestones");
   if (!container) return;
-  const milestones = buildTimelineMilestones(rows, workingProfile);
+  const milestones = buildTimelineMilestones(rows, profile, ssPlan);
   if (!milestones.length) {
     container.innerHTML =
       '<div class="milestone"><span>Milestones</span><p>Enter a valid plan to see the major retirement milestones.</p></div>';
@@ -1408,17 +1689,34 @@ function timelineInputCell(age, field, value, defaultValue, disabled, type) {
   return `<input type="number" step="${type === "percent" ? "0.1" : "100"}" inputmode="decimal" data-timeline-age="${age}" data-timeline-field="${field}" placeholder="${displayDefault}" value="${rawValue}" ${disabled ? "disabled" : ""} aria-label="${field} override for age ${age}" />`;
 }
 
+function withdrawalSourceSummary(sources) {
+  if (!sources) return "";
+  const parts = [];
+  if (sources.cash > 0) parts.push(`Cash ${money(sources.cash)}`);
+  if (sources.brokerage > 0) parts.push(`Brokerage ${money(sources.brokerage)}`);
+  if (sources.preTax > 0) parts.push(`Pre-tax ${money(sources.preTax)}`);
+  if (sources.roth > 0) parts.push(`Roth ${money(sources.roth)}`);
+  if (sources.rmd > 0) parts.push(`Includes RMD ${money(sources.rmd)}`);
+  return parts.join(" • ");
+}
+
 function timelineRowMarkup(row) {
   const override = row.overrides;
+  const taxesTotal =
+    row.niit + row.socialSecurityTax + row.irmaa + row.rothConversionTax;
   return `<tr data-timeline-row="${row.age}" class="${row.hasOverride ? "has-override" : ""}">
     <td>${row.age}<span class="timeline-status">${row.isRetired ? "Retired" : "Working"}</span></td>
     <td>${timelineInputCell(row.age, "returnPercent", override.returnPercent, row.defaultReturnPercent, false, "percent")}</td>
     <td>${timelineInputCell(row.age, "income", override.income, row.isRetired ? row.income : row.defaultIncome, row.isRetired, "currency")}</td>
+    <td data-col="socialSecurity">${row.socialSecurityGrossBenefit > 0 ? money(row.socialSecurityGrossBenefit) : "—"}</td>
+    <td data-col="rothConversion" class="${row.rothConversion > 0 ? "model-generated" : ""}">${row.rothConversion > 0 ? money(row.rothConversion) : "—"}</td>
     <td>${timelineInputCell(row.age, "expenses", override.expenses, row.defaultExpenses, !row.isRetired, "currency")}</td>
     <td>${timelineInputCell(row.age, "extraWithdrawal", override.extraWithdrawal, 0, !row.isRetired, "currency")}</td>
     <td data-col="contribution">${row.isRetired ? "—" : money(row.contribution)}</td>
-    <td data-col="withdrawal">${row.isRetired ? money(row.withdrawal) : "—"}</td>
+    <td data-col="withdrawal" title="${withdrawalSourceSummary(row.withdrawalSources)}">${row.isRetired ? money(row.withdrawal) : "—"}</td>
     <td data-col="rmd">${row.rmd > 0 ? money(row.rmd) : "—"}</td>
+    <td data-col="taxes">${taxesTotal > 0 ? money(taxesTotal) : "—"}</td>
+    <td data-col="netCashFlow">${money(row.netCashFlow)}</td>
     <td data-col="endTotal" class="timeline-total">${money(row.endTotal)}</td>
     <td><button type="button" class="button button-quiet timeline-clear" data-timeline-clear="${row.age}" ${row.hasOverride ? "" : "disabled"}>Clear</button></td>
   </tr>`;
@@ -1428,7 +1726,7 @@ function renderTimelineTable(rows) {
   const body = $("#timeline-table-body");
   if (!rows.length) {
     body.innerHTML =
-      '<tr><td colspan="10">Enter a valid current age and life expectancy to build a timeline.</td></tr>';
+      '<tr><td colspan="14">Enter a valid current age and life expectancy to build a timeline.</td></tr>';
     return;
   }
   body.innerHTML = rows.map(timelineRowMarkup).join("");
@@ -1439,24 +1737,61 @@ function updateTimelineComputedCells(rows) {
     const tr = document.querySelector(`[data-timeline-row="${row.age}"]`);
     if (!tr) return;
     tr.classList.toggle("has-override", row.hasOverride);
+    const taxesTotal =
+      row.niit + row.socialSecurityTax + row.irmaa + row.rothConversionTax;
+    tr.querySelector('[data-col="socialSecurity"]').textContent =
+      row.socialSecurityGrossBenefit > 0
+        ? money(row.socialSecurityGrossBenefit)
+        : "—";
+    const conversionCell = tr.querySelector('[data-col="rothConversion"]');
+    conversionCell.textContent =
+      row.rothConversion > 0 ? money(row.rothConversion) : "—";
+    conversionCell.classList.toggle("model-generated", row.rothConversion > 0);
     tr.querySelector('[data-col="contribution"]').textContent = row.isRetired
       ? "—"
       : money(row.contribution);
-    tr.querySelector('[data-col="withdrawal"]').textContent = row.isRetired
-      ? money(row.withdrawal)
-      : "—";
+    const withdrawalCell = tr.querySelector('[data-col="withdrawal"]');
+    withdrawalCell.textContent = row.isRetired ? money(row.withdrawal) : "—";
+    withdrawalCell.title = withdrawalSourceSummary(row.withdrawalSources);
     tr.querySelector('[data-col="rmd"]').textContent =
       row.rmd > 0 ? money(row.rmd) : "—";
+    tr.querySelector('[data-col="taxes"]').textContent =
+      taxesTotal > 0 ? money(taxesTotal) : "—";
+    tr.querySelector('[data-col="netCashFlow"]').textContent = money(
+      row.netCashFlow,
+    );
     tr.querySelector('[data-col="endTotal"]').textContent = money(row.endTotal);
     const clearButton = tr.querySelector(".timeline-clear");
     if (clearButton) clearButton.disabled = !row.hasOverride;
   });
 }
 
+function renderStrategySummary(ssPlan, profile, summary) {
+  const container = $("#strategy-summary");
+  if (!container) return;
+  const ssText =
+    ssPlan.fraBenefit > 0
+      ? `${ssPlan.source === "auto" ? "Model-recommended" : "Manual"}: claim at age ${ssPlan.claimAge} for ${money(ssPlan.annualBenefit)}/year.`
+      : "No Social Security benefit is modeled yet.";
+  const conversionText =
+    profile.rothConversionStrategy === "auto"
+      ? summary.firstConversionAge != null
+        ? `Model-recommended: convert from age ${summary.firstConversionAge} through age ${summary.lastConversionAge}, filling headroom below an illustrative 22% federal bracket (total ${money(summary.cumulativeRothConversion)}).`
+        : "Model-recommended: no conversion window fits before RMDs begin under current assumptions."
+      : `Manual: ${money(numberValue(profile.rothConversionAnnualAmount))}/year every modeled year.`;
+  container.innerHTML = `
+    <div class="strategy-summary-item"><span>Social Security</span><p>${ssText}</p></div>
+    <div class="strategy-summary-item"><span>Roth conversions</span><p>${conversionText}</p></div>
+  `;
+}
+
 function renderTimeline() {
-  const rows = buildTimelineRows(workingProfile);
+  const { effectiveProfile, ssPlan } = resolveEffectiveProfile(workingProfile);
+  const rows = buildTimelineRows(effectiveProfile);
+  const summary = timelineSummary(rows, effectiveProfile);
+  renderStrategySummary(ssPlan, effectiveProfile, summary);
   renderTimelineTable(rows);
-  renderTimelineMilestones(rows);
+  renderTimelineMilestones(rows, effectiveProfile, ssPlan);
   renderPortfolioComposition(rows);
   renderTimelineSummary(rows);
   return rows;
@@ -1473,9 +1808,12 @@ function handleTimelineTableInput(event) {
   const field = event.target.dataset.timelineField;
   if (age === undefined || !field) return;
   setTimelineOverride(Number(age), field, event.target.value);
-  const rows = buildTimelineRows(workingProfile);
+  const { effectiveProfile, ssPlan } = resolveEffectiveProfile(workingProfile);
+  const rows = buildTimelineRows(effectiveProfile);
+  const summary = timelineSummary(rows, effectiveProfile);
+  renderStrategySummary(ssPlan, effectiveProfile, summary);
   updateTimelineComputedCells(rows);
-  renderTimelineMilestones(rows);
+  renderTimelineMilestones(rows, effectiveProfile, ssPlan);
   renderPortfolioComposition(rows);
   renderTimelineSummary(rows);
 }
@@ -1539,7 +1877,7 @@ function renderMetrics() {
     `Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`,
   );
   renderRecommendations(metrics);
-  renderSocialSecuritySchedule();
+  renderSocialSecuritySchedule(metrics.socialSecurityPlan);
   renderTimeline();
   return metrics;
 }

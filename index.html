@@ -58,7 +58,7 @@
               <div>
                 <span class="eyebrow">YOUR PRIMARY ANSWER</span>
                 <h2 id="readiness-heading">Can your plan carry you there?</h2>
-                <p>Adjust any assumption and watch the retirement picture respond in real time.</p>
+                <p>Update any assumption and watch the retirement picture respond immediately.</p>
               </div>
               <div class="intro-meta"><span class="status-pill" id="readiness-status">On Track</span><span id="readiness-updated">Updated just now</span></div>
             </div>
@@ -172,15 +172,7 @@
               <div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax estimate.</p></div></div>
               <div class="form-grid" id="tax-fields"></div>
             </section>
-            <section class="panel table-panel" aria-label="Social Security claiming-age comparison">
-              <div class="table-header"><div><span class="panel-label">Social Security claiming-age comparison</span><p>Illustrative early/delayed claiming adjustment assuming the entered benefit is your full retirement age (67) amount. Single-filer estimate; spousal benefits are not modeled.</p></div></div>
-              <table class="ss-claiming-table">
-                <thead>
-                  <tr><th scope="col">Claim age</th><th scope="col">Annual benefit</th><th scope="col">Monthly benefit</th></tr>
-                </thead>
-                <tbody id="ss-claiming-table-body"></tbody>
-              </table>
-            </section>
+            <section class="notice-panel"><strong>Social Security and Roth conversion strategy moved</strong><p>The model now generates a recommended Social Security claiming age and Roth conversion plan automatically. Review and override both on the Timeline page.</p></section>
           </section>
 
           <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
@@ -223,7 +215,7 @@
 
           <section class="page-view" data-view="timeline" aria-labelledby="timeline-heading" hidden>
             <div class="page-intro">
-              <div><span class="eyebrow">ADJUST IT TO YOUR REALITY</span><h2 id="timeline-heading">Wealth timeline</h2><p>Override any modeled year to match what actually happened or what you expect ahead. Blank fields keep the automatic model value.</p></div>
+              <div><span class="eyebrow">ADJUST IT TO YOUR REALITY</span><h2 id="timeline-heading">Wealth timeline</h2><p>Override any modeled year to reflect what actually happened or what you expect ahead. Leave a field blank to keep the model's value.</p></div>
               <button class="button button-quiet" id="timeline-reset-button" type="button">Reset timeline overrides</button>
             </div>
             <div class="timeline-summary">
@@ -231,6 +223,21 @@
               <div><span>Projected depletion</span><strong id="timeline-depletion-age">Not projected to deplete</strong></div>
               <div><span>Years with an override</span><strong id="timeline-overridden-count">0</strong></div>
             </div>
+            <section class="panel timeline-strategy-panel" aria-label="Model-generated retirement strategy">
+              <div class="panel-label">Model-generated retirement strategy</div>
+              <p class="panel-supporting-text">The model automatically generates a recommended Social Security claiming age, a Roth conversion plan, and a suggested funding sequence from your profile, assets, income, and expenses. Switch a strategy to Manual if you want to set your own values below; the same retirement engine still drives every projection.</p>
+              <div id="strategy-summary" class="strategy-summary"></div>
+              <div class="form-grid" id="strategy-fields"></div>
+            </section>
+            <section class="panel table-panel" aria-label="Social Security claiming-age comparison">
+              <div class="table-header"><div><span class="panel-label">Social Security claiming-age comparison</span><p>Illustrative early/delayed claiming values based on the modeled full-retirement-age benefit. The starred row is the active claiming age. Single-filer estimate; spousal benefits are not modeled.</p></div></div>
+              <table class="ss-claiming-table">
+                <thead>
+                  <tr><th scope="col">Claim age</th><th scope="col">Annual benefit</th><th scope="col">Monthly benefit</th></tr>
+                </thead>
+                <tbody id="ss-claiming-table-body"></tbody>
+              </table>
+            </section>
             <section class="panel timeline-milestones-panel" aria-label="Retirement milestones">
               <div class="panel-label">Retirement milestones</div>
               <div id="timeline-milestones" class="timeline-milestones"></div>
@@ -249,11 +256,15 @@
                       <th scope="col">Age</th>
                       <th scope="col">Return %</th>
                       <th scope="col">Income</th>
+                      <th scope="col">Social Security</th>
+                      <th scope="col">Roth conversion</th>
                       <th scope="col">Expenses / spending</th>
                       <th scope="col">Extra withdrawal</th>
                       <th scope="col">Contribution</th>
                       <th scope="col">Withdrawal</th>
                       <th scope="col">RMD</th>
+                      <th scope="col">Taxes</th>
+                      <th scope="col">Net cash flow</th>
                       <th scope="col">Ending assets</th>
                       <th scope="col"></th>
                     </tr>
@@ -262,7 +273,7 @@
                 </table>
               </div>
             </section>
-            <section class="notice-panel"><strong>Prototype boundary</strong><p>Income and expense overrides apply only during the phase they affect (working years for income, retired years for spending and one-time withdrawals). RMD uses an illustrative IRS Uniform Lifetime Table, and brokerage growth includes a simplified NIIT surtax; Social Security claiming-age changes and account aggregation remain deferred.</p></section>
+            <section class="notice-panel"><strong>Prototype boundary</strong><p>Income and expense overrides apply only during the phase they affect (working years for income, retired years for spending and one-time withdrawals). RMD uses an illustrative IRS Uniform Lifetime Table, and brokerage growth includes a simplified NIIT surtax. Model-generated Social Security and Roth conversion strategies are illustrative, single-filer, non-optimized estimates, not claiming or tax optimization; account aggregation remains deferred.</p></section>
           </section>
 
           <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
@@ -277,7 +288,7 @@
         <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
       </main>
     </div>
-    <script src="./data.js?v=4"></script>
-    <script src="./app.js?v=10"></script>
+    <script src="./data.js?v=5"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>
