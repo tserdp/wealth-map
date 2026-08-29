@@ -19,12 +19,14 @@ function profile(overrides = {}) {
     otherAnnualIncome: 0,
     contributionRates: {
       fourOhOneK: 0.1,
-      brokerage: 0.06,
-      cash: 0.02,
     },
     iraContributions: {
       traditionalIraAnnual: 3000,
       rothIraAnnual: 6000,
+    },
+    savingsAllocation: {
+      brokerage: 0.75,
+      cash: 0.25,
     },
     employerMatch: { rate: 0.5, salaryCap: 0.03 },
     currentAnnualExpenses: 85000,

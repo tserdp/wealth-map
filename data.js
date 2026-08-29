@@ -9,14 +9,20 @@ const SAMPLE_PROFILE = Object.freeze({
   otherAnnualIncome: 0,
   contributionRates: Object.freeze({
     fourOhOneK: 0.1,
-    brokerage: 0.06,
-    cash: 0.02,
   }),
   // Fixed annual dollar IRA contributions (replaces legacy percentage-based contributionRates
   // traditionalIra/rothIra fields; legacy profiles are migrated automatically at calculation time).
   iraContributions: Object.freeze({
     traditionalIraAnnual: 3000,
     rothIraAnnual: 6000,
+  }),
+  // Splits Available Annual Savings (after-tax income minus current expenses minus Roth IRA
+  // contribution) between a taxable brokerage account and cash; must total 100%. Replaces legacy
+  // contributionRates.brokerage/cash percentages, which were applied against after-tax income
+  // directly rather than against leftover available savings.
+  savingsAllocation: Object.freeze({
+    brokerage: 0.75,
+    cash: 0.25,
   }),
   employerMatch: Object.freeze({
     rate: 0.5,
@@ -103,6 +109,7 @@ function cloneSampleProfile() {
     assets: { ...SAMPLE_PROFILE.assets },
     contributionRates: { ...SAMPLE_PROFILE.contributionRates },
     iraContributions: { ...SAMPLE_PROFILE.iraContributions },
+    savingsAllocation: { ...SAMPLE_PROFILE.savingsAllocation },
     employerMatch: { ...SAMPLE_PROFILE.employerMatch },
     timelineOverrides: {},
   };

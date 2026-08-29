@@ -38,8 +38,8 @@
     "preTaxWithdrawalTaxRate",
     "socialSecurityTaxablePercent",
     "contributionRates.fourOhOneK",
-    "contributionRates.brokerage",
-    "contributionRates.cash",
+    "savingsAllocation.brokerage",
+    "savingsAllocation.cash",
     "employerMatch.rate",
     "employerMatch.salaryCap",
   ];
@@ -241,6 +241,32 @@
     }
   }
 
+  // Brokerage and Cash allocations split Available Annual Savings and must always total 100%,
+  // so an out-of-range combination never silently reaches the calculation engine.
+  function validateSavingsAllocationTotal(profile, errors) {
+    const brokerage = getPath(profile, "savingsAllocation.brokerage");
+    const cash = getPath(profile, "savingsAllocation.cash");
+    if (isBlank(brokerage) && isBlank(cash)) return;
+
+    const brokerageNumber = safeNumber(brokerage) || 0;
+    const cashNumber = safeNumber(cash) || 0;
+    if (!Number.isFinite(brokerageNumber) || !Number.isFinite(cashNumber))
+      return;
+
+    if (Math.abs(brokerageNumber + cashNumber - 1) > 0.0005) {
+      addError(
+        errors,
+        "savingsAllocation.brokerage",
+        "Brokerage and Cash allocations must total 100%.",
+      );
+      addError(
+        errors,
+        "savingsAllocation.cash",
+        "Brokerage and Cash allocations must total 100%.",
+      );
+    }
+  }
+
   function validateSocialSecurityBenefitMode(profile, errors) {
     const value = getPath(profile, "socialSecurityBenefitMode");
     if (isBlank(value)) return;
@@ -278,14 +304,8 @@
       );
     }
 
-    const contributions = [
-      "contributionRates.fourOhOneK",
-      "contributionRates.brokerage",
-      "contributionRates.cash",
-    ].reduce((sum, field) => {
-      const value = safeNumber(getPath(profile, field)) || 0;
-      return sum + value;
-    }, 0);
+    const employeeFourOhOneKRate =
+      safeNumber(getPath(profile, "contributionRates.fourOhOneK")) || 0;
 
     const traditionalIraAnnual =
       safeNumber(getPath(profile, "iraContributions.traditionalIraAnnual")) ||
@@ -294,17 +314,9 @@
       safeNumber(getPath(profile, "iraContributions.rothIraAnnual")) || 0;
     const iraAnnualTotal = traditionalIraAnnual + rothIraAnnual;
 
-    if (contributions > 1 && totalIncome > 0) {
-      addWarning(
-        warnings,
-        "contributionRates.fourOhOneK",
-        "Employee contributions are high relative to available income.",
-      );
-    }
-
     if (
       totalIncome > 0 &&
-      contributions * totalIncome + iraAnnualTotal > totalIncome
+      employeeFourOhOneKRate * totalIncome + iraAnnualTotal > totalIncome
     ) {
       addWarning(
         warnings,
@@ -402,6 +414,7 @@
     validatePercentFields(profile, blockingErrors);
     validateSocialSecurityBenefitMode(profile, blockingErrors);
     validateSocialSecurityClaimAge(profile, blockingErrors);
+    validateSavingsAllocationTotal(profile, blockingErrors);
     validateWarnings(profile, warnings);
 
     return {

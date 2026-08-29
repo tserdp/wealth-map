@@ -23,18 +23,26 @@ current federal tax = simplified progressive brackets(taxable income before stan
 current state tax = taxable income before standard deduction * state income tax rate
 income available after taxes = taxable income before standard deduction - federal tax - state tax
 Roth IRA contribution = fixed editable annual dollar amount (not a percentage of income)
-brokerage and cash contributions = their rates * income available after taxes
+available annual savings = max(0, income available after taxes - Roth IRA contribution - current annual expenses)
+brokerage contribution = brokerage allocation % * available annual savings
+cash contribution = cash allocation % * available annual savings
 employee savings = all employee account contributions
 employer 401(k) match = min(employee 401(k) contribution * match rate, annual salary * match cap)
 after-tax annual surplus = income available after taxes - Roth IRA, brokerage, and cash contributions - current annual expenses
 savings rate = employee savings / gross annual income
 ```
 
-Traditional IRA and Roth IRA contributions are entered as fixed annual dollar amounts rather than percentages of income; this better matches how users plan IRA funding (for example, "$7,000 per year") and avoids unrealistic contribution levels that a percentage of income could otherwise produce. Traditional IRA keeps its pre-tax treatment: its annual amount reduces the simplified tax base exactly like the employee 401(k) contribution. Roth IRA keeps its after-tax treatment: its annual amount does not change taxable income and is instead subtracted, alongside brokerage and cash contributions, from the after-tax annual surplus. Employee pre-tax contributions reduce the simplified tax base. Employer match is not employee income or cash spending: it does not reduce take-home pay, annual surplus, or the savings-rate denominator. It is shown separately and added to projected 401(k) assets. Federal brackets and state tax are illustrative only; payroll taxes, credits, deductions beyond the standard deduction, and local taxes are not modeled.
+Traditional IRA and Roth IRA contributions are entered as fixed annual dollar amounts rather than percentages of income; this better matches how users plan IRA funding (for example, "$7,000 per year") and avoids unrealistic contribution levels that a percentage of income could otherwise produce. Traditional IRA keeps its pre-tax treatment: its annual amount reduces the simplified tax base exactly like the employee 401(k) contribution. Roth IRA keeps its after-tax treatment: its annual amount does not change taxable income and is instead subtracted from income available after taxes to help determine available annual savings. Employee pre-tax contributions reduce the simplified tax base. Employer match is not employee income or cash spending: it does not reduce take-home pay, annual surplus, or the savings-rate denominator. It is shown separately and added to projected 401(k) assets. Federal brackets and state tax are illustrative only; payroll taxes, credits, deductions beyond the standard deduction, and local taxes are not modeled.
+
+Brokerage and Cash are allocations of available annual savings, not separate percentages of after-tax income. Available annual savings is after-tax income minus current annual expenses minus the Roth IRA contribution, floored at zero so it can never go negative. `Brokerage Allocation %` and `Cash Allocation %` split that pool and must total 100%; Plan Setup validation blocks any combination that does not. Because they only divide an already-nonnegative pool, Brokerage and Cash contributions can never create additional negative cash flow. Savings rate, employee savings, total retirement contributions, the Retirement Health Score, projected assets, the funding gap, the Wealth Timeline, and portfolio sustainability all consume the resulting dollar amounts.
 
 ### Legacy percentage-based IRA contributions
 
 Profiles created before this model change may still carry the legacy `contributionRates.traditionalIra` and `contributionRates.rothIra` percentages. Before any calculation runs, the model migrates such a profile automatically: it replays the original percentage-based formulas above (Traditional IRA rate against gross annual income; Roth IRA rate against income available after taxes and pre-tax contributions) to reconstruct the approximate dollar amount the user intended, rounds each to the nearest dollar, stores them as the new annual IRA contribution amounts, and removes the legacy percentage fields. The migration is a one-time, best-effort conversion that preserves the user's original savings intent; it is not re-applied once a profile carries annual IRA contribution amounts.
+
+### Legacy percentage-of-income Brokerage/Cash contribution rates
+
+Profiles created before this model change may still carry the legacy `contributionRates.brokerage` and `contributionRates.cash` percentages, which were applied directly against after-tax income. Before any calculation runs, the model migrates such a profile automatically: it converts the legacy percentages into an equivalent `savingsAllocation.brokerage`/`savingsAllocation.cash` split that preserves their relative proportion (for example, legacy rates of 6% and 2% become a 75%/25% allocation split), and removes the legacy percentage fields. The migration is a one-time, best-effort conversion; it is not re-applied once a profile carries a savings allocation split.
 
 ## Assets and projection
 

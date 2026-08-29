@@ -198,6 +198,18 @@ function iraContributionAmount(profile, key) {
   return Math.max(0, numberValue(source ? source[key] : 0));
 }
 
+// Normalizes Brokerage/Cash allocation shares so they always split available savings 100%,
+// defensively guarding the calculation engine even if a caller supplies shares that don't sum
+// to 1 (validation blocks that in the UI, but this keeps the math safe for any raw profile).
+function normalizedSavingsAllocation(profile) {
+  const allocation = profile.savingsAllocation || {};
+  const brokerageRaw = Math.max(0, numberValue(allocation.brokerage));
+  const cashRaw = Math.max(0, numberValue(allocation.cash));
+  const total = brokerageRaw + cashRaw;
+  if (total <= 0) return { brokerage: 0.5, cash: 0.5 };
+  return { brokerage: brokerageRaw / total, cash: cashRaw / total };
+}
+
 // Converts legacy percentage-based Traditional/Roth IRA contributionRates into fixed annual
 // dollar amounts using the profile's own income and tax assumptions, preserving the user's
 // approximate original savings intent. No-ops for profiles that already use iraContributions.
@@ -259,6 +271,47 @@ function migrateLegacyIraContributions(rawProfile) {
   };
 }
 
+// Converts legacy percentage-of-income Brokerage/Cash contributionRates into a Brokerage/Cash
+// savingsAllocation split (shares of Available Annual Savings), preserving the user's
+// approximate original balance between the two. No-ops for profiles that already use
+// savingsAllocation.
+function migrateLegacySavingsAllocation(rawProfile) {
+  const legacyRates = rawProfile && rawProfile.contributionRates;
+  const hasLegacyAllocation =
+    legacyRates &&
+    (numberValue(legacyRates.brokerage) > 0 ||
+      numberValue(legacyRates.cash) > 0);
+  const hasNewAllocation =
+    rawProfile.savingsAllocation &&
+    (numberValue(rawProfile.savingsAllocation.brokerage) > 0 ||
+      numberValue(rawProfile.savingsAllocation.cash) > 0);
+
+  if (!hasLegacyAllocation || hasNewAllocation) {
+    return rawProfile.savingsAllocation
+      ? rawProfile
+      : { ...rawProfile, savingsAllocation: { brokerage: 0.75, cash: 0.25 } };
+  }
+
+  const legacyBrokerage = Math.max(0, numberValue(legacyRates.brokerage));
+  const legacyCash = Math.max(0, numberValue(legacyRates.cash));
+  const legacyTotal = legacyBrokerage + legacyCash;
+  const brokerageShare = legacyTotal > 0 ? legacyBrokerage / legacyTotal : 0.75;
+  const cashShare = legacyTotal > 0 ? legacyCash / legacyTotal : 0.25;
+
+  const migratedContributionRates = { ...legacyRates };
+  delete migratedContributionRates.brokerage;
+  delete migratedContributionRates.cash;
+
+  return {
+    ...rawProfile,
+    contributionRates: migratedContributionRates,
+    savingsAllocation: {
+      brokerage: roundTo(brokerageShare, 4),
+      cash: roundTo(cashShare, 4),
+    },
+  };
+}
+
 function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
   const salaryInput =
     salaryOverride != null ? salaryOverride : profile.annualSalary;
@@ -282,8 +335,16 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
     taxableIncome - currentFederalTax - currentStateTax,
   );
   const rothIra = iraContributionAmount(profile, "rothIraAnnual");
-  const brokerage = afterTaxIncome * contributionRate(profile, "brokerage");
-  const cash = afterTaxIncome * contributionRate(profile, "cash");
+  // Available Annual Savings = after-tax income minus current expenses minus the Roth IRA
+  // contribution; it can never go negative, so Brokerage/Cash allocations never create
+  // additional negative cash flow.
+  const availableAnnualSavings = Math.max(
+    0,
+    afterTaxIncome - numberValue(profile.currentAnnualExpenses) - rothIra,
+  );
+  const savingsAllocation = normalizedSavingsAllocation(profile);
+  const brokerage = availableAnnualSavings * savingsAllocation.brokerage;
+  const cash = availableAnnualSavings * savingsAllocation.cash;
   const employeePostTaxContributions = rothIra + brokerage + cash;
   const matchRate = Math.min(
     1,
@@ -309,6 +370,7 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
     employeeFourOhOneK,
     traditionalIra,
     rothIra,
+    availableAnnualSavings,
     brokerage,
     cash,
     employeePreTaxContributions,
@@ -598,9 +660,12 @@ function recommendedRothConversionAmount(
 }
 
 function calculate(rawProfile) {
-  // Migrate legacy percentage-based IRA contribution profiles before anything else runs, so
-  // every downstream calculation sees only fixed annual iraContributions amounts.
-  const migratedProfile = migrateLegacyIraContributions(rawProfile);
+  // Migrate legacy percentage-based IRA contribution profiles, then legacy percentage-of-income
+  // Brokerage/Cash contribution rates, before anything else runs, so every downstream
+  // calculation sees only the current fixed/allocation-based fields.
+  const migratedProfile = migrateLegacySavingsAllocation(
+    migrateLegacyIraContributions(rawProfile),
+  );
   // Resolve model-generated strategies (currently Social Security claiming) once, up front, so
   // every downstream calculation shares the same concrete assumptions as the Timeline.
   const { effectiveProfile: profile, ssPlan } =
@@ -705,6 +770,9 @@ function calculate(rawProfile) {
     afterTaxIncome: contributions.afterTaxIncome,
     surplus,
     savingsRate,
+    availableAnnualSavings: contributions.availableAnnualSavings,
+    brokerageContribution: contributions.brokerage,
+    cashContribution: contributions.cash,
     employeeSavings: contributions.employeeSavings,
     employerFourOhOneKMatch: contributions.employerFourOhOneKMatch,
     totalRetirementContributions: contributions.totalRetirementContributions,
@@ -1411,18 +1479,18 @@ function inputConfig() {
     ],
     contributionsAdditional: [
       [
-        "contributionRates.brokerage",
-        "Brokerage contribution",
+        "savingsAllocation.brokerage",
+        "Brokerage Allocation %",
         "percent",
-        "% of income after simplified taxes and employee pre-tax contributions",
-        6,
+        "% of available annual savings",
+        75,
       ],
       [
-        "contributionRates.cash",
-        "Cash contribution",
+        "savingsAllocation.cash",
+        "Cash Allocation %",
         "percent",
-        "% of income after simplified taxes and employee pre-tax contributions",
-        2,
+        "% of available annual savings",
+        25,
       ],
     ],
   };
@@ -1462,6 +1530,14 @@ const PLAN_SETUP_FIELD_HELP = {
   "iraContributions.rothIraAnnual": {
     title: "Roth IRA Annual Contribution",
     text: "Annual contribution to a Roth IRA. Contributions are made with after-tax dollars and can grow tax-free in the model.",
+  },
+  "savingsAllocation.brokerage": {
+    title: "Brokerage Allocation %",
+    text: "Percentage of available annual savings allocated to a taxable brokerage account after taxes and living expenses.",
+  },
+  "savingsAllocation.cash": {
+    title: "Cash Allocation %",
+    text: "Percentage of available annual savings allocated to cash reserves after taxes and living expenses.",
   },
   cashReserveTargetYears: {
     title: "Cash Reserve (Years of Spending)",
@@ -2280,6 +2356,12 @@ function renderMetrics() {
     "#retirement-contributions",
     money(metrics.totalRetirementContributions),
   );
+  setText("#available-annual-savings", money(metrics.availableAnnualSavings));
+  setText(
+    "#brokerage-contribution-amount",
+    money(metrics.brokerageContribution),
+  );
+  setText("#cash-contribution-amount", money(metrics.cashContribution));
   setText("#current-federal-tax", money(metrics.currentFederalTax));
   setText("#current-state-tax", money(metrics.currentStateTax));
   setText("#after-tax-assets", money(metrics.afterTaxAssets));
