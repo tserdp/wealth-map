@@ -10,10 +10,16 @@ const percentFormatter = new Intl.NumberFormat("en-US", {
 
 let workingProfile = cloneSampleProfile();
 let currentPage = "readiness";
+let lastValidProjection = null;
+let currentValidationState = {
+  blockingErrors: [],
+  warnings: [],
+  isValid: true,
+};
 
 const pageTitles = {
   readiness: ["READINESS", "Retirement Readiness"],
-  profile: ["PROFILE", "Profile"],
+  profile: ["PLAN SETUP", "Plan Setup"],
   assets: ["ASSETS", "Assets"],
   cashflow: ["CASH FLOW", "Income & Expenses"],
   timeline: ["TIMELINE", "Wealth Timeline"],
@@ -1054,6 +1060,10 @@ function createField(config) {
   control.id = fieldId;
   control.dataset.field = key;
   control.dataset.type = type;
+  const messageEl = document.createElement("div");
+  messageEl.className = "field-message";
+  messageEl.id = `${fieldId}-message`;
+  messageEl.setAttribute("aria-live", "polite");
   if (type === "select") {
     const normalizedOptions = options.map((option) =>
       Array.isArray(option) ? option : [option, option],
@@ -1076,10 +1086,73 @@ function createField(config) {
   }
   control.value =
     type === "percent" ? numberValue(value) * 100 : (value ?? fallback);
+  control.setAttribute("aria-invalid", "false");
+  control.setAttribute("aria-describedby", messageEl.id);
   const unitEl = document.createElement("small");
   unitEl.textContent = unit || "Edit to recalculate";
-  wrapper.append(labelEl, control, unitEl);
+  wrapper.append(labelEl, control, unitEl, messageEl);
   return wrapper;
+}
+
+function fieldValidationMessage(field, state) {
+  const entries = [
+    ...(state.blockingErrors || []),
+    ...(state.warnings || []),
+  ].filter((entry) => entry.field === field);
+  if (!entries.length) return "";
+  const blocking = entries.find((entry) => entry.level === "error");
+  const selected = blocking || entries[0];
+  const kind = selected.level === "warning" ? "warning" : "error";
+  return { message: selected.message, kind };
+}
+
+function renderValidationMessages(state = currentValidationState) {
+  const note = document.getElementById("plan-setup-validation-note");
+  if (note) {
+    note.hidden = state.isValid;
+  }
+
+  document.querySelectorAll("[data-field]").forEach((input) => {
+    const field = input.dataset.field;
+    const wrapper =
+      input.closest(".field") ||
+      input.closest(".asset-row") ||
+      input.closest(".inline-field");
+    const messageEl = wrapper ? wrapper.querySelector(".field-message") : null;
+    const validation = fieldValidationMessage(field, state);
+    const isInvalid = Boolean(validation && validation.kind === "error");
+    const isWarning = Boolean(validation && validation.kind === "warning");
+    input.setAttribute("aria-invalid", String(isInvalid));
+    if (wrapper) {
+      wrapper.classList.toggle("invalid", isInvalid);
+      wrapper.classList.toggle("warning", isWarning && !isInvalid);
+      wrapper.classList.toggle("field-warning", isWarning && !isInvalid);
+      wrapper.classList.toggle("field-invalid", isInvalid);
+    }
+    if (messageEl) {
+      messageEl.textContent = validation ? validation.message : "";
+      messageEl.classList.toggle(
+        "warning",
+        validation ? validation.kind === "warning" : false,
+      );
+      messageEl.parentElement?.classList.toggle("invalid", isInvalid);
+    }
+  });
+
+  document.querySelectorAll(".field-message").forEach((messageEl) => {
+    const field = messageEl.closest(".field")?.querySelector("[data-field]")
+      ?.dataset.field;
+    if (!field) return;
+    const validation = fieldValidationMessage(field, state);
+    if (!validation) {
+      messageEl.textContent = "";
+      messageEl.style.display = "none";
+    } else {
+      messageEl.textContent = validation.message;
+      messageEl.style.display = "block";
+      messageEl.classList.toggle("warning", validation.kind === "warning");
+    }
+  });
 }
 
 function renderFormFields() {
@@ -1105,12 +1178,17 @@ function renderAssetFields() {
       const metadata = ASSET_METADATA[key];
       const row = document.createElement("div");
       row.className = "asset-row";
-      row.innerHTML = `<div class="asset-label"><span>${metadata.label}</span><small>${metadata.interpretation}</small></div><span class="tax-tag">${metadata.treatment}</span><input data-field="assets.${key}" data-type="currency" type="number" min="0" step="1000" value="${workingProfile.assets[key]}" aria-label="${metadata.label} balance" />`;
+      row.innerHTML = `<div class="asset-label"><span>${metadata.label}</span><small>${metadata.interpretation}</small></div><span class="tax-tag">${metadata.treatment}</span><input data-field="assets.${key}" data-type="currency" type="number" min="0" step="1000" value="${workingProfile.assets[key]}" aria-label="${metadata.label} balance" /><div class="field-message" aria-live="polite"></div>`;
       return row;
     });
   container.replaceChildren(...rows);
   $("#realEstate").value = workingProfile.assets.realEstate;
   $("#realEstate").dataset.type = "currency";
+  $("#realEstate").setAttribute("aria-invalid", "false");
+  $("#realEstate").setAttribute(
+    "aria-describedby",
+    "field-assets.realEstate-message",
+  );
 }
 
 function renderSocialSecuritySchedule() {
@@ -1481,7 +1559,20 @@ function handleTimelineTableInput(event) {
 }
 
 function renderMetrics() {
+  const validation =
+    typeof PlanSetupValidation !== "undefined"
+      ? PlanSetupValidation.validatePlanSetup(workingProfile)
+      : { blockingErrors: [], warnings: [], isValid: true };
+  currentValidationState = validation;
+
+  if (!validation.isValid) {
+    renderValidationMessages(validation);
+    return lastValidProjection;
+  }
+
+  renderValidationMessages(validation);
   const metrics = calculate(workingProfile);
+  lastValidProjection = metrics;
   setText("#sidebar-name", workingProfile.name || "Unnamed plan");
   setText(
     "#sidebar-timeline",
@@ -1546,21 +1637,56 @@ function renderMetrics() {
 
 function updateWorkingValue(field, rawValue, type) {
   const path = field.split(".");
+  const optionalBlankFields = new Set([
+    "otherAnnualIncome",
+    "rothConversionAnnualAmount",
+    "socialSecurityAnnualBenefit",
+    "irmaaAnnualSurcharge",
+    "assets.realEstate",
+  ]);
+
   const value =
     type === "percent"
-      ? numberValue(rawValue) / 100
+      ? rawValue === "" && optionalBlankFields.has(field)
+        ? 0
+        : rawValue === ""
+          ? null
+          : numberValue(rawValue) / 100
       : type === "number" || type === "currency"
-        ? numberValue(rawValue)
+        ? rawValue === "" && optionalBlankFields.has(field)
+          ? 0
+          : rawValue === ""
+            ? null
+            : numberValue(rawValue)
         : rawValue;
+
+  const candidate = JSON.parse(JSON.stringify(workingProfile));
+  if (path.length === 2) {
+    if (!candidate[path[0]]) candidate[path[0]] = {};
+    candidate[path[0]][path[1]] = value;
+  } else {
+    candidate[path[0]] = value;
+  }
+
+  const validation =
+    typeof PlanSetupValidation !== "undefined"
+      ? PlanSetupValidation.validatePlanSetup(candidate)
+      : { blockingErrors: [], warnings: [], isValid: true };
+
+  if (!validation.isValid) {
+    renderValidationMessages(validation);
+    return;
+  }
+
   if (path.length === 2) workingProfile[path[0]][path[1]] = value;
   else workingProfile[path[0]] = value;
+  renderMetrics();
 }
 
 function handleInput(event) {
   const field = event.target.dataset.field;
   if (!field) return;
   updateWorkingValue(field, event.target.value, event.target.dataset.type);
-  renderMetrics();
 }
 
 function showPage(page) {
@@ -1620,9 +1746,12 @@ function toggleMetricHelp(button) {
 
 function resetSample() {
   workingProfile = cloneSampleProfile();
+  lastValidProjection = null;
+  currentValidationState = { blockingErrors: [], warnings: [], isValid: true };
   renderFormFields();
   renderAssetFields();
   bindFieldListeners();
+  renderValidationMessages(currentValidationState);
   renderMetrics();
 }
 
@@ -1636,6 +1765,7 @@ function bindFieldListeners() {
 function init() {
   renderFormFields();
   renderAssetFields();
+  renderValidationMessages(currentValidationState);
   renderMetrics();
   bindFieldListeners();
   $$(".nav-item").forEach((item) =>

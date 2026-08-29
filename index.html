@@ -21,7 +21,7 @@
         </div>
         <nav class="primary-nav" aria-label="Main pages">
           <button class="nav-item active" type="button" data-page="readiness"><span>01</span>Readiness</button>
-          <button class="nav-item" type="button" data-page="profile"><span>02</span>Profile</button>
+          <button class="nav-item" type="button" data-page="profile"><span>02</span>Plan Setup</button>
           <button class="nav-item" type="button" data-page="assets"><span>03</span>Assets</button>
           <button class="nav-item" type="button" data-page="cashflow"><span>04</span>Income &amp; Expenses</button>
           <button class="nav-item" type="button" data-page="timeline"><span>05</span>Timeline</button>
@@ -158,8 +158,9 @@
 
           <section class="page-view" data-view="profile" aria-labelledby="profile-heading" hidden>
             <div class="page-intro">
-              <div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your profile</h2><p>Set the assumptions that shape every projection.</p></div>
+              <div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your plan setup</h2><p>Set the assumptions that shape every projection, from taxes and income to retirement timing and contributions.</p></div>
             </div>
+            <div class="validation-standby" id="plan-setup-validation-note" hidden>Projections are paused until required plan inputs are valid.</div>
             <section class="form-panel panel" aria-label="Personal details">
               <div class="section-heading"><div><span class="panel-label">Personal details</span><p>These values travel with your working plan.</p></div></div>
               <div class="form-grid" id="profile-fields"></div>
@@ -278,6 +279,7 @@
       </main>
     </div>
     <script src="./data.js?v=4"></script>
-    <script src="./app.js?v=10"></script>
+    <script src="./validation.js?v=1"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>
