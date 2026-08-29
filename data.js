@@ -28,8 +28,12 @@ const SAMPLE_PROFILE = Object.freeze({
   stateIncomeTaxRate: 0.044,
   taxableGainsTaxRate: 0.15,
   preTaxWithdrawalTaxRate: 0.22,
+  // "auto" lets the model generate a recommended strategy; "manual" uses the fields below.
+  rothConversionStrategy: "auto",
   rothConversionAnnualAmount: 0,
+  socialSecurityStrategy: "auto",
   socialSecurityAnnualBenefit: 0,
+  socialSecurityClaimAge: 67,
   socialSecurityTaxablePercent: 0.85,
   rmdStartAge: 73,
   irmaaIncomeThreshold: 200000,
