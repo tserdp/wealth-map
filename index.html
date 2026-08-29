@@ -33,7 +33,7 @@
             <strong id="sidebar-name">Alex Morgan</strong>
             <span id="sidebar-timeline">Age 45 → Retire 65</span>
           </div>
-          <p class="sidebar-note"><span aria-hidden="true">i</span> Educational estimate only</p>
+          <p class="sidebar-note"><span aria-hidden="true">i</span> Sample plan</p>
         </div>
       </aside>
 
@@ -110,7 +110,7 @@
                 <div class="driver-list">
                   <span><b>01</b> Investable assets</span><span><b>02</b> Annual savings</span><span><b>03</b> Expected return</span><span><b>04</b> Spending goal</span><span><b>05</b> Retirement timing</span>
                 </div>
-                <p class="assumption-note">Real-dollar projection with end-of-year contributions. Tax values are simplified estimates, not official tax calculations.</p>
+                <p class="assumption-note">Real-dollar projection with end-of-year contributions.</p>
               </article>
             </div>
             <article class="panel tax-summary-card">
@@ -152,7 +152,7 @@
                   </div>
                 </div>
               </div>
-              <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable-gains and net investment income tax (NIIT) rates, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, an IRS Uniform Lifetime Table RMD estimate, and IRMAA thresholds. All figures are illustrative estimates, not tax advice.</p>
+              <p class="tax-summary-note">Based on the tax assumptions configured in your plan.</p>
             </article>
           </section>
 
@@ -183,12 +183,11 @@
               </button>
               <div class="collapsible-content" id="advanced-tax-content" hidden>
                 <div class="collapsible-intro">
-                  <p>These settings allow more detailed tax and retirement modeling. Most users can leave the defaults unchanged.</p>
+                  <p>Most users can leave these settings at their defaults.</p>
                 </div>
                 <div class="form-grid" id="advanced-tax-fields"></div>
               </div>
             </section>
-            <section class="notice-panel"><strong>Social Security claim age moved to Plan Setup</strong><p>Set your Social Security claim age directly on the Plan Setup page, next to the annual benefit. The Roth conversion strategy, and an optional model-recommended Social Security claiming age, remain on the Timeline page.</p></section>
           </section>
 
           <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
@@ -253,7 +252,7 @@
             </div>
             <section class="panel timeline-strategy-panel" aria-label="Model-generated retirement strategy">
               <div class="panel-label">Model-generated retirement strategy</div>
-              <p class="panel-supporting-text">By default, the plan uses the Social Security claim age set on Plan Setup and a model-recommended Roth conversion plan. Switch Social Security strategy to Model-recommended if you'd rather let the model search ages 62-70 for the claiming age that keeps your plan solvent longest; switch Roth conversion strategy to Manual to set your own annual amount. The same retirement engine still drives every projection.</p>
+              <p class="panel-supporting-text">Uses your Plan Setup claim age and a model-generated Roth conversion plan by default. Switch either strategy below to compare an alternative.</p>
               <div id="strategy-summary" class="strategy-summary"></div>
               <div class="form-grid" id="strategy-fields"></div>
             </section>
@@ -277,6 +276,7 @@
             </section>
             <section class="panel timeline-table-panel" aria-label="Editable year-by-year timeline">
               <div class="panel-label">Year-by-year detail</div>
+              <p class="panel-supporting-text">Income overrides apply during working years; spending and withdrawal overrides apply during retirement.</p>
               <div class="timeline-table-wrapper">
                 <table class="timeline-table">
                   <thead>
@@ -301,7 +301,6 @@
                 </table>
               </div>
             </section>
-            <section class="notice-panel"><strong>Prototype boundary</strong><p>Income and expense overrides apply only during the phase they affect (working years for income, retired years for spending and one-time withdrawals). RMD uses an illustrative IRS Uniform Lifetime Table, and brokerage growth includes a simplified NIIT surtax. Model-generated Social Security and Roth conversion strategies are illustrative, single-filer, non-optimized estimates, not claiming or tax optimization; account aggregation remains deferred.</p></section>
           </section>
 
           <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
@@ -310,10 +309,9 @@
               <span class="status-pill" id="recommendation-count">0 actions</span>
             </div>
             <div class="recommendation-list" id="recommendation-list"></div>
-            <section class="notice-panel"><strong>Prototype boundary</strong><p>Tax, Roth conversion, Social Security, IRMAA, and RMD values are simplified educational estimates only. Full optimization remains outside this prototype.</p></section>
           </section>
         </div>
-        <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
+        <footer class="app-footer">WealthMap is an educational retirement planning tool, not a tax, legal, or investment advisor. Consult qualified professionals before making important financial decisions.</footer>
       </main>
     </div>
     <script src="./data.js?v=6"></script>

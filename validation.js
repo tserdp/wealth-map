@@ -241,6 +241,18 @@
     }
   }
 
+  function validateSocialSecurityBenefitMode(profile, errors) {
+    const value = getPath(profile, "socialSecurityBenefitMode");
+    if (isBlank(value)) return;
+    if (value !== "auto" && value !== "manual") {
+      addError(
+        errors,
+        "socialSecurityBenefitMode",
+        "Social Security benefit mode must be 'auto' or 'manual'.",
+      );
+    }
+  }
+
   function validateWarnings(profile, warnings) {
     const annualSalary = safeNumber(getPath(profile, "annualSalary")) || 0;
     const otherIncome = safeNumber(getPath(profile, "otherAnnualIncome")) || 0;
@@ -388,6 +400,7 @@
     validateAgeRelationship(profile, blockingErrors);
     validateMonetaryFields(profile, blockingErrors);
     validatePercentFields(profile, blockingErrors);
+    validateSocialSecurityBenefitMode(profile, blockingErrors);
     validateSocialSecurityClaimAge(profile, blockingErrors);
     validateWarnings(profile, warnings);
 

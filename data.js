@@ -3,7 +3,7 @@ const SAMPLE_PROFILE = Object.freeze({
   currentAge: 45,
   targetRetirementAge: 65,
   lifeExpectancy: 90,
-  state: "Colorado",
+  state: "Florida",
   filingStatus: "Married filing jointly",
   annualSalary: 150000,
   otherAnnualIncome: 0,
@@ -29,7 +29,8 @@ const SAMPLE_PROFILE = Object.freeze({
   projectionBasis: "real_dollars",
   safeWithdrawalRate: 0.04,
   federalStandardDeduction: 30000,
-  stateIncomeTaxRate: 0.044,
+  // Florida has no state income tax; users in a taxed state can edit this to their own rate.
+  stateIncomeTaxRate: 0,
   taxableGainsTaxRate: 0.15,
   preTaxWithdrawalTaxRate: 0.22,
   // "auto" lets the model generate a recommended strategy; "manual" uses the fields below.
@@ -38,6 +39,8 @@ const SAMPLE_PROFILE = Object.freeze({
   // "manual" uses the Plan Setup Social Security Claim Age field directly; "auto" (selectable on
   // the Timeline page) instead searches for a model-recommended claiming age.
   socialSecurityStrategy: "manual",
+  // "auto" automatically estimates the FRA benefit from current earnings; "manual" allows manual entry.
+  socialSecurityBenefitMode: "auto",
   socialSecurityAnnualBenefit: 0,
   // Full Retirement Age (67) is the default claim age; supported range is 62-70.
   socialSecurityClaimAge: 67,

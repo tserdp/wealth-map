@@ -121,7 +121,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; }
 .field { display: grid; gap: 7px; }
 .field label, .inline-field label { color: var(--ink-soft); font: 11px Arial, sans-serif; }
+.field-label-row { display: inline-flex; align-items: center; gap: 6px; }
+.field-label-row label { margin: 0; }
 .field input, .field select, .inline-field input { width: 100%; border: 1px solid #8b8d8f; border-radius: 2px; padding: 11px 12px; background: #fff; color: var(--ink); font-size: 16px; }
+.field input[readonly], .field input:read-only { background: var(--paper); color: var(--ink); border-color: var(--line); cursor: default; }
 .field input:invalid, .inline-field input:invalid { border-color: var(--coral); }
 .field small { color: var(--ink-soft); font: 10px Arial, sans-serif; }
 .field.invalid input, .field.invalid select, .field-warning input, .field-warning select, .inline-field.invalid input, .inline-field.warning input { border-color: var(--coral); }

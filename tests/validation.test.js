@@ -362,6 +362,35 @@ test("rejects a non-numeric or non-finite IRA contribution amount", () => {
   );
 });
 
+test("accepts valid Social Security benefit modes", () => {
+  assert.equal(
+    validatePlanSetup(profile({ socialSecurityBenefitMode: "auto" }))
+      .blockingErrors.length,
+    0,
+  );
+  assert.equal(
+    validatePlanSetup(profile({ socialSecurityBenefitMode: "manual" }))
+      .blockingErrors.length,
+    0,
+  );
+  assert.equal(
+    validatePlanSetup(profile({ socialSecurityBenefitMode: undefined }))
+      .blockingErrors.length,
+    0,
+  );
+});
+
+test("rejects an invalid Social Security benefit mode", () => {
+  const result = validatePlanSetup(
+    profile({ socialSecurityBenefitMode: "custom" }),
+  );
+  assert.ok(
+    result.blockingErrors.some(
+      (item) => item.field === "socialSecurityBenefitMode",
+    ),
+  );
+});
+
 test("warns when total contributions exceed available income", () => {
   const result = validatePlanSetup(
     profile({

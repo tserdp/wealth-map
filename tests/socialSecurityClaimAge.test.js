@@ -57,10 +57,14 @@ function retiringSoonProfile(claimAge, overrides = {}) {
     targetRetirementAge: 62,
     lifeExpectancy: 90,
     socialSecurityStrategy: "manual",
+    socialSecurityBenefitMode: "manual",
     socialSecurityAnnualBenefit: 24000,
     socialSecurityClaimAge: claimAge,
     socialSecurityTaxablePercent: 0.85,
     retirementAnnualSpendingGoal: 90000,
+    // Explicit non-zero rate so these Social Security tax assertions don't depend on the app's
+    // default state income tax rate (Florida/0% by default).
+    stateIncomeTaxRate: 0.044,
     ...overrides,
   });
 }

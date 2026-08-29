@@ -279,13 +279,14 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - FR24: Every derived value must be recalculated from the current state after an edit, including asset totals, savings rate, surplus, projected assets, funding gap, expected retirement age, score, and recommendations.
 - FR25: The prototype must provide a reset control that restores the original sample dataset.
 - FR26: Invalid or out-of-range input must produce an understandable validation state and must not produce broken, misleading, or `NaN` output.
-- FR27: The prototype must provide editable assumptions for federal standard deduction, state income tax rate, taxable gains tax rate, pre-tax withdrawal tax rate, annual Roth conversion, Social Security benefit and taxable percentage, RMD start age, NIIT MAGI threshold, retirement cash reserve target, and IRMAA threshold and surcharge.
+- FR27: The prototype must provide editable assumptions for federal standard deduction, state income tax rate, taxable gains tax rate, pre-tax withdrawal tax rate, annual Roth conversion, Social Security benefit mode and taxable percentage, RMD start age, NIIT MAGI threshold, Cash Reserve (Years of Spending) (how many years of retirement spending the model attempts to maintain in cash), and IRMAA threshold and surcharge.
 - FR28: The prototype must apply a simplified progressive federal bracket calculation and show its assumptions without representing it as official tax software.
 - FR29: The prototype must include simplified tax effects in projected after-tax assets and retirement spending needs.
 - FR30: The prototype must provide an editable year-by-year wealth timeline from the current age through life expectancy, allowing per-year overrides that fall back to the modeled value when left blank.
 - FR31: The prototype must estimate RMDs using an age-indexed divisor table rather than a single flat rate.
 - FR32: The prototype must show an illustrative, read-only Social Security claiming-age comparison and must not present it as claiming optimization.
-- FR33: The prototype must provide an editable Social Security claim age (62-70, default 67, editable on Plan Setup next to the annual benefit) that adjusts the modeled benefit using the same claiming-schedule methodology as FR32, and that determines the age at which modeled Social Security income, taxation, and withdrawal offsets begin in the Timeline, Readiness, and Recommendations. A profile without a stored claim age must default to 67 without user action.
+- FR33: The prototype must provide an editable Social Security claim age (62-70, default 67, editable on Plan Setup next to the benefit mode) that adjusts the modeled benefit using the same claiming-schedule methodology as FR32, and that determines the age at which modeled Social Security income, taxation, and withdrawal offsets begin in the Timeline, Readiness, and Recommendations. A profile without a stored claim age must default to 67 without user action.
+- FR34: The prototype must default new plans to an automatically estimated Social Security benefit at Full Retirement Age based on current earnings, while providing an editable manual entry mode to allow users to supply values from their official Social Security statement.
 
 ## 9. Sample Data Model
 
@@ -297,7 +298,7 @@ const sampleProfile = {
   currentAge: 45,
   targetRetirementAge: 65,
   lifeExpectancy: 90,
-  state: "Colorado",
+  state: "Florida",
   filingStatus: "Married filing jointly",
   annualSalary: 150000,
   otherAnnualIncome: 0,
@@ -309,13 +310,15 @@ const sampleProfile = {
   projectionBasis: "real_dollars",
   safeWithdrawalRate: 0.04,
   federalStandardDeduction: 30000,
-  stateIncomeTaxRate: 0.044,
+  // Florida has no state income tax; this is the default so most users start with 0%.
+  stateIncomeTaxRate: 0,
   taxableGainsTaxRate: 0.15,
   preTaxWithdrawalTaxRate: 0.22,
   rothConversionAnnualAmount: 0,
+  socialSecurityBenefitMode: "auto",
   socialSecurityAnnualBenefit: 0,
-  // Full Retirement Age (67) is the default and supported range is 62-70; the entered benefit
-  // above is always interpreted as the Full Retirement Age amount and adjusted for this claim age.
+  // Full Retirement Age (67) is the default and supported range is 62-70; the Full Retirement Age
+  // benefit is adjusted for this claim age.
   socialSecurityClaimAge: 67,
   socialSecurityTaxablePercent: 0.85,
   rmdStartAge: 73,
