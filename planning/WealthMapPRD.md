@@ -285,6 +285,7 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - FR30: The prototype must provide an editable year-by-year wealth timeline from the current age through life expectancy, allowing per-year overrides that fall back to the modeled value when left blank.
 - FR31: The prototype must estimate RMDs using an age-indexed divisor table rather than a single flat rate.
 - FR32: The prototype must show an illustrative, read-only Social Security claiming-age comparison and must not present it as claiming optimization.
+- FR33: The prototype must provide an editable Social Security claim age (62-70, default 67, editable on Plan Setup next to the annual benefit) that adjusts the modeled benefit using the same claiming-schedule methodology as FR32, and that determines the age at which modeled Social Security income, taxation, and withdrawal offsets begin in the Timeline, Readiness, and Recommendations. A profile without a stored claim age must default to 67 without user action.
 
 ## 9. Sample Data Model
 
@@ -313,6 +314,9 @@ const sampleProfile = {
   preTaxWithdrawalTaxRate: 0.22,
   rothConversionAnnualAmount: 0,
   socialSecurityAnnualBenefit: 0,
+  // Full Retirement Age (67) is the default and supported range is 62-70; the entered benefit
+  // above is always interpreted as the Full Retirement Age amount and adjusted for this claim age.
+  socialSecurityClaimAge: 67,
   socialSecurityTaxablePercent: 0.85,
   rmdStartAge: 73,
   niitThreshold: 250000,
@@ -346,9 +350,12 @@ Use simplified, transparent calculations suitable for a prototype. Keep calculat
 
 - Total annual income = salary + other annual income.
 - Employee 401(k) contribution = employee 401(k) rate x annual salary.
-- Traditional IRA contribution = Traditional IRA rate x total annual income.
+- Traditional IRA contribution = a fixed editable annual dollar amount, not a percentage of income. This better matches how users plan IRA funding (for example, "$7,000 per year") and avoids unrealistic contribution levels a percentage of income could produce.
 - Illustrative current income taxes apply after those employee pre-tax contributions.
-- Roth IRA, brokerage, and cash contributions use the income remaining after illustrative taxes and employee pre-tax contributions.
+- Roth IRA contribution = a fixed editable annual dollar amount, not a percentage of income. It does not reduce taxable income and is subtracted from income remaining after illustrative taxes and employee pre-tax contributions, alongside brokerage and cash contributions.
+- Brokerage and cash contributions use the income remaining after illustrative taxes and employee pre-tax contributions.
+- An optional "Use current IRS max" shortcut fills the Traditional IRA or Roth IRA annual contribution field with an illustrative current-year IRA limit; it only populates the field and introduces no separate contribution logic.
+- Legacy profiles saved with percentage-based `contributionRates.traditionalIra`/`contributionRates.rothIra` are migrated automatically the first time the model runs: the old percentage formulas are replayed against the profile's own income and tax assumptions to reconstruct an equivalent annual dollar amount, which then becomes the profile's Traditional IRA/Roth IRA annual contribution going forward.
 - Employer 401(k) match = the lesser of employee 401(k) contribution x match rate and annual salary x match cap. It increases retirement savings but does not reduce employee income, cash flow, or taxable income.
 - After-tax annual surplus = income after employee pre-tax contributions and illustrative taxes - employee post-tax contributions - current annual expenses.
 - Employee savings rate = employee contributions / total annual income.

@@ -176,6 +176,84 @@ function contributionRate(profile, key) {
   return Math.min(1, Math.max(0, numberValue(profile.contributionRates[key])));
 }
 
+// Current illustrative IRS annual IRA contribution limits, used only by the optional "Use IRS
+// max" convenience shortcut; they populate the annual contribution fields rather than driving
+// any separate contribution logic.
+const IRA_CONTRIBUTION_LIMIT_UNDER_50 = 7000;
+const IRA_CONTRIBUTION_LIMIT_50_PLUS = 8000;
+
+function iraContributionLimit(age) {
+  return numberValue(age) >= 50
+    ? IRA_CONTRIBUTION_LIMIT_50_PLUS
+    : IRA_CONTRIBUTION_LIMIT_UNDER_50;
+}
+
+function iraContributionAmount(profile, key) {
+  const source = profile.iraContributions;
+  return Math.max(0, numberValue(source ? source[key] : 0));
+}
+
+// Converts legacy percentage-based Traditional/Roth IRA contributionRates into fixed annual
+// dollar amounts using the profile's own income and tax assumptions, preserving the user's
+// approximate original savings intent. No-ops for profiles that already use iraContributions.
+function migrateLegacyIraContributions(rawProfile) {
+  const legacyRates = rawProfile && rawProfile.contributionRates;
+  const hasLegacyIra =
+    legacyRates &&
+    (numberValue(legacyRates.traditionalIra) > 0 ||
+      numberValue(legacyRates.rothIra) > 0);
+  const hasNewIra =
+    rawProfile.iraContributions &&
+    (numberValue(rawProfile.iraContributions.traditionalIraAnnual) > 0 ||
+      numberValue(rawProfile.iraContributions.rothIraAnnual) > 0);
+
+  if (!hasLegacyIra || hasNewIra) {
+    return rawProfile.iraContributions
+      ? rawProfile
+      : {
+          ...rawProfile,
+          iraContributions: { traditionalIraAnnual: 0, rothIraAnnual: 0 },
+        };
+  }
+
+  const salary = Math.max(0, numberValue(rawProfile.annualSalary));
+  const otherIncome = Math.max(0, numberValue(rawProfile.otherAnnualIncome));
+  const earnedIncome = salary + otherIncome;
+  const employeeFourOhOneK =
+    salary * Math.min(1, Math.max(0, numberValue(legacyRates.fourOhOneK)));
+  const traditionalIraRate = Math.min(
+    1,
+    Math.max(0, numberValue(legacyRates.traditionalIra)),
+  );
+  const traditionalIraAnnual = earnedIncome * traditionalIraRate;
+  const taxableIncome = Math.max(
+    0,
+    earnedIncome - employeeFourOhOneK - traditionalIraAnnual,
+  );
+  const afterTaxIncome = Math.max(
+    0,
+    taxableIncome - ordinaryIncomeTax(rawProfile, taxableIncome),
+  );
+  const rothIraRate = Math.min(
+    1,
+    Math.max(0, numberValue(legacyRates.rothIra)),
+  );
+  const rothIraAnnual = afterTaxIncome * rothIraRate;
+
+  const migratedContributionRates = { ...legacyRates };
+  delete migratedContributionRates.traditionalIra;
+  delete migratedContributionRates.rothIra;
+
+  return {
+    ...rawProfile,
+    contributionRates: migratedContributionRates,
+    iraContributions: {
+      traditionalIraAnnual: Math.round(traditionalIraAnnual),
+      rothIraAnnual: Math.round(rothIraAnnual),
+    },
+  };
+}
+
 function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
   const salaryInput =
     salaryOverride != null ? salaryOverride : profile.annualSalary;
@@ -189,8 +267,7 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
   );
   const salary = Math.max(0, numberValue(salaryInput));
   const employeeFourOhOneK = salary * contributionRate(profile, "fourOhOneK");
-  const traditionalIra =
-    earnedIncome * contributionRate(profile, "traditionalIra");
+  const traditionalIra = iraContributionAmount(profile, "traditionalIraAnnual");
   const employeePreTaxContributions = employeeFourOhOneK + traditionalIra;
   const taxableIncome = Math.max(0, earnedIncome - employeePreTaxContributions);
   const currentFederalTax = progressiveFederalTax(profile, taxableIncome);
@@ -199,7 +276,7 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
     0,
     taxableIncome - currentFederalTax - currentStateTax,
   );
-  const rothIra = afterTaxIncome * contributionRate(profile, "rothIra");
+  const rothIra = iraContributionAmount(profile, "rothIraAnnual");
   const brokerage = afterTaxIncome * contributionRate(profile, "brokerage");
   const cash = afterTaxIncome * contributionRate(profile, "cash");
   const employeePostTaxContributions = rothIra + brokerage + cash;
@@ -381,7 +458,7 @@ function recommendedSocialSecurityClaimAge(profile, fraBenefit) {
     const trialProfile = {
       ...profile,
       socialSecurityStrategy: "manual",
-      socialSecurityAnnualBenefit: fraBenefit,
+      socialSecurityAnnualBenefit: benefitForClaimAge(fraBenefit, claimAge),
       socialSecurityClaimAge: claimAge,
     };
     const summary = timelineSummary(
@@ -449,7 +526,8 @@ function resolveEffectiveProfile(profile) {
     effectiveProfile: {
       ...profile,
       socialSecurityStrategy: "manual",
-      socialSecurityAnnualBenefit: ssPlan.fraBenefit,
+      // The engine always runs on the claim-age-adjusted benefit, never the raw FRA amount.
+      socialSecurityAnnualBenefit: ssPlan.annualBenefit,
       socialSecurityClaimAge: ssPlan.claimAge,
     },
     ssPlan,
@@ -493,9 +571,13 @@ function recommendedRothConversionAmount(
 }
 
 function calculate(rawProfile) {
+  // Migrate legacy percentage-based IRA contribution profiles before anything else runs, so
+  // every downstream calculation sees only fixed annual iraContributions amounts.
+  const migratedProfile = migrateLegacyIraContributions(rawProfile);
   // Resolve model-generated strategies (currently Social Security claiming) once, up front, so
   // every downstream calculation shares the same concrete assumptions as the Timeline.
-  const { effectiveProfile: profile, ssPlan } = resolveEffectiveProfile(rawProfile);
+  const { effectiveProfile: profile, ssPlan } =
+    resolveEffectiveProfile(migratedProfile);
   const assets = profile.assets;
   const financialAssets =
     assets.brokerage +
@@ -801,7 +883,9 @@ function buildTimelineRows(profile) {
         ? Math.max(0, profile.socialSecurityAnnualBenefit - socialSecurityTax)
         : 0;
       rowSocialSecurityTax = socialSecurityTax;
-      rowSocialSecurityGross = ssActive ? profile.socialSecurityAnnualBenefit : 0;
+      rowSocialSecurityGross = ssActive
+        ? profile.socialSecurityAnnualBenefit
+        : 0;
       income = netSocialSecurity;
 
       // RMD is based on the prior year-end pre-tax balance, before this year's growth.
@@ -836,10 +920,8 @@ function buildTimelineRows(profile) {
         const baseTax = ordinaryIncomeTax(profile, taxableSocialSecurity + rmd);
         conversionTax = Math.max(
           0,
-          ordinaryIncomeTax(
-            profile,
-            taxableSocialSecurity + rmd + conversion,
-          ) - baseTax,
+          ordinaryIncomeTax(profile, taxableSocialSecurity + rmd + conversion) -
+            baseTax,
         );
         preTax = preTaxAfterRmd - conversion;
         roth += conversion;
@@ -1084,15 +1166,6 @@ function inputConfig() {
       ["currentAge", "Current age", "number", "years", 45],
       ["targetRetirementAge", "Target retirement age", "number", "years", 65],
       ["lifeExpectancy", "Life expectancy", "number", "years", 90],
-      ["state", "State", "text", "", "Colorado"],
-      [
-        "filingStatus",
-        "Tax filing status",
-        "select",
-        "",
-        "Married filing jointly",
-        ["Single", "Married filing jointly", "Head of household"],
-      ],
     ],
     assumptions: [
       [
@@ -1113,7 +1186,32 @@ function inputConfig() {
         [["real_dollars", "Real dollars"]],
       ],
     ],
-    tax: [
+    basicTax: [
+      ["state", "State", "text", "", "Colorado"],
+      [
+        "filingStatus",
+        "Tax filing status",
+        "select",
+        "",
+        "Married filing jointly",
+        ["Single", "Married filing jointly", "Head of household"],
+      ],
+      [
+        "socialSecurityAnnualBenefit",
+        "Social Security annual benefit",
+        "currency",
+        "per year, assumed at Full Retirement Age (67)",
+        0,
+      ],
+      [
+        "socialSecurityClaimAge",
+        "Social Security claim age",
+        "number",
+        "years, 62-70 (default 67)",
+        67,
+      ],
+    ],
+    advancedTax: [
       [
         "federalStandardDeduction",
         "Federal standard deduction",
@@ -1129,6 +1227,13 @@ function inputConfig() {
         "percent",
         "%",
         22,
+      ],
+      [
+        "rothConversionAnnualAmount",
+        "Annual Roth conversion",
+        "currency",
+        "per year (manual strategy only)",
+        0,
       ],
       [
         "socialSecurityTaxablePercent",
@@ -1167,8 +1272,9 @@ function inputConfig() {
         0,
       ],
     ],
-    // Rendered on the Timeline page: lets users override the model-generated Social Security
-    // and Roth conversion strategies without duplicating the fields on the Profile page.
+    // Rendered on the Timeline page: lets users override the model-generated Roth conversion
+    // strategy, and choose whether Social Security uses the claim age set on Plan Setup or a
+    // model-recommended claim age, without duplicating fields already on the Profile page.
     strategy: [
       [
         "socialSecurityStrategy",
@@ -1178,22 +1284,8 @@ function inputConfig() {
         "auto",
         [
           ["auto", "Model-recommended claiming age"],
-          ["manual", "Manual benefit and claiming age"],
+          ["manual", "Use claim age from Plan Setup"],
         ],
-      ],
-      [
-        "socialSecurityAnnualBenefit",
-        "Manual full-retirement-age (67) benefit",
-        "currency",
-        "per year, used only when strategy is Manual",
-        0,
-      ],
-      [
-        "socialSecurityClaimAge",
-        "Manual claiming age",
-        "number",
-        "years, 62-70, used only when strategy is Manual",
-        67,
       ],
       [
         "rothConversionStrategy",
@@ -1205,13 +1297,6 @@ function inputConfig() {
           ["auto", "Model-recommended conversions"],
           ["manual", "Manual annual amount"],
         ],
-      ],
-      [
-        "rothConversionAnnualAmount",
-        "Manual annual Roth conversion",
-        "currency",
-        "per year, used only when strategy is Manual",
-        0,
       ],
     ],
     income: [
@@ -1234,41 +1319,15 @@ function inputConfig() {
         75000,
       ],
     ],
-    contributions: [
+    // Grouped into Employer-Sponsored, IRA Contributions, and Additional Savings so the
+    // fixed-dollar IRA fields are not confused with the percentage-of-income contribution rates.
+    contributionsEmployer: [
       [
         "contributionRates.fourOhOneK",
         "Employee 401(k) contribution",
         "percent",
         "% of salary",
         10,
-      ],
-      [
-        "contributionRates.traditionalIra",
-        "Traditional IRA contribution",
-        "percent",
-        "% of gross earned income",
-        2,
-      ],
-      [
-        "contributionRates.rothIra",
-        "Roth IRA contribution",
-        "percent",
-        "% of income after simplified taxes and employee pre-tax contributions",
-        6,
-      ],
-      [
-        "contributionRates.brokerage",
-        "Brokerage contribution",
-        "percent",
-        "% of income after simplified taxes and employee pre-tax contributions",
-        6,
-      ],
-      [
-        "contributionRates.cash",
-        "Cash contribution",
-        "percent",
-        "% of income after simplified taxes and employee pre-tax contributions",
-        2,
       ],
       [
         "employerMatch.rate",
@@ -1285,11 +1344,47 @@ function inputConfig() {
         3,
       ],
     ],
+    contributionsIra: [
+      [
+        "iraContributions.traditionalIraAnnual",
+        "Traditional IRA annual contribution",
+        "currency",
+        "per year, pre-tax",
+        3000,
+        undefined,
+        "traditional",
+      ],
+      [
+        "iraContributions.rothIraAnnual",
+        "Roth IRA annual contribution",
+        "currency",
+        "per year, after-tax",
+        6000,
+        undefined,
+        "roth",
+      ],
+    ],
+    contributionsAdditional: [
+      [
+        "contributionRates.brokerage",
+        "Brokerage contribution",
+        "percent",
+        "% of income after simplified taxes and employee pre-tax contributions",
+        6,
+      ],
+      [
+        "contributionRates.cash",
+        "Cash contribution",
+        "percent",
+        "% of income after simplified taxes and employee pre-tax contributions",
+        2,
+      ],
+    ],
   };
 }
 
 function createField(config) {
-  const [key, label, type, unit, fallback, options] = config;
+  const [key, label, type, unit, fallback, options, iraMaxKind] = config;
   const value = key
     .split(".")
     .reduce((currentValue, path) => currentValue?.[path], workingProfile);
@@ -1329,6 +1424,10 @@ function createField(config) {
         type === "percent" ? "0.1" : type === "currency" ? "100" : "1";
       control.inputMode = "decimal";
     }
+    if (key === "socialSecurityClaimAge") {
+      control.min = "62";
+      control.max = "70";
+    }
   }
   control.value =
     type === "percent" ? numberValue(value) * 100 : (value ?? fallback);
@@ -1337,7 +1436,26 @@ function createField(config) {
   const unitEl = document.createElement("small");
   unitEl.textContent = unit || "Edit to recalculate";
   wrapper.append(labelEl, control, unitEl, messageEl);
+  if (iraMaxKind) {
+    const limit = iraContributionLimit(workingProfile.currentAge);
+    const maxButton = document.createElement("button");
+    maxButton.type = "button";
+    maxButton.className = "button button-quiet field-max-button";
+    maxButton.dataset.maxField = key;
+    maxButton.textContent = `Use current IRS max (${money(limit)})`;
+    wrapper.append(maxButton);
+  }
   return wrapper;
+}
+
+function handleMaxContributionClick(event) {
+  const button = event.target.closest("[data-max-field]");
+  if (!button) return;
+  const field = button.dataset.maxField;
+  const limit = iraContributionLimit(workingProfile.currentAge);
+  const input = document.querySelector(`[data-field="${field}"]`);
+  if (input) input.value = limit;
+  updateWorkingValue(field, String(limit), "currency");
 }
 
 function fieldValidationMessage(field, state) {
@@ -1406,11 +1524,14 @@ function renderFormFields() {
   [
     ["#profile-fields", config.profile],
     ["#assumption-fields", config.assumptions],
-    ["#tax-fields", config.tax],
+    ["#basic-tax-fields", config.basicTax],
+    ["#advanced-tax-fields", config.advancedTax],
     ["#strategy-fields", config.strategy],
     ["#income-fields", config.income],
     ["#expense-fields", config.expenses],
-    ["#contribution-fields", config.contributions],
+    ["#contribution-fields-employer", config.contributionsEmployer],
+    ["#contribution-fields-ira", config.contributionsIra],
+    ["#contribution-fields-additional", config.contributionsAdditional],
   ].forEach(([selector, fields]) => {
     const container = $(selector);
     if (!container) return;
@@ -1771,7 +1892,8 @@ function withdrawalSourceSummary(sources) {
   if (!sources) return "";
   const parts = [];
   if (sources.cash > 0) parts.push(`Cash ${money(sources.cash)}`);
-  if (sources.brokerage > 0) parts.push(`Brokerage ${money(sources.brokerage)}`);
+  if (sources.brokerage > 0)
+    parts.push(`Brokerage ${money(sources.brokerage)}`);
   if (sources.preTax > 0) parts.push(`Pre-tax ${money(sources.preTax)}`);
   if (sources.roth > 0) parts.push(`Roth ${money(sources.roth)}`);
   if (sources.rmd > 0) parts.push(`Includes RMD ${money(sources.rmd)}`);
@@ -1981,6 +2103,8 @@ function updateWorkingValue(field, rawValue, type) {
     "socialSecurityAnnualBenefit",
     "irmaaAnnualSurcharge",
     "assets.realEstate",
+    "iraContributions.traditionalIraAnnual",
+    "iraContributions.rothIraAnnual",
   ]);
 
   const value =
@@ -2046,6 +2170,31 @@ function closeMenu() {
   $("#scrim").hidden = true;
 }
 
+function toggleAdvancedTaxSettings() {
+  const button = $("#advanced-tax-toggle");
+  const content = $("#advanced-tax-content");
+  if (!button || !content) return;
+  const isOpen = !content.hidden;
+  content.hidden = isOpen;
+  button.setAttribute("aria-expanded", String(!isOpen));
+  // Save preference to session storage
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem("advancedTaxSettingsOpen", String(!isOpen));
+  }
+}
+
+function restoreAdvancedTaxSettingsState() {
+  const content = $("#advanced-tax-content");
+  const button = $("#advanced-tax-toggle");
+  if (!content || !button) return;
+  const isOpen =
+    typeof sessionStorage !== "undefined"
+      ? sessionStorage.getItem("advancedTaxSettingsOpen") === "true"
+      : false;
+  content.hidden = !isOpen;
+  button.setAttribute("aria-expanded", String(isOpen));
+}
+
 function closeScoreHelp() {
   const button = $("#score-help-button");
   const help = $("#score-help");
@@ -2088,6 +2237,7 @@ function resetSample() {
   currentValidationState = { blockingErrors: [], warnings: [], isValid: true };
   renderFormFields();
   renderAssetFields();
+  restoreAdvancedTaxSettingsState();
   bindFieldListeners();
   renderValidationMessages(currentValidationState);
   renderMetrics();
@@ -2103,6 +2253,7 @@ function bindFieldListeners() {
 function init() {
   renderFormFields();
   renderAssetFields();
+  restoreAdvancedTaxSettingsState();
   renderValidationMessages(currentValidationState);
   renderMetrics();
   bindFieldListeners();
@@ -2110,6 +2261,11 @@ function init() {
     item.addEventListener("click", () => showPage(item.dataset.page)),
   );
   $("#reset-button").addEventListener("click", resetSample);
+  document.addEventListener("click", handleMaxContributionClick);
+  $("#advanced-tax-toggle").addEventListener(
+    "click",
+    toggleAdvancedTaxSettings,
+  );
   $("#timeline-reset-button").addEventListener("click", () => {
     clearAllTimelineOverrides();
     renderMetrics();
@@ -2153,4 +2309,21 @@ function init() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", init);
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", init);
+}
+
+// Exposes pure calculation functions for Node-based tests; no-op in the browser, where
+// `module` is undefined for a classic (non-module) script.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    calculate,
+    buildTimelineRows,
+    timelineSummary,
+    benefitForClaimAge,
+    socialSecurityClaimingSchedule,
+    resolveSocialSecurityPlan,
+    resolveEffectiveProfile,
+    SOCIAL_SECURITY_FULL_RETIREMENT_AGE,
+  };
+}

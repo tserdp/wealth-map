@@ -169,11 +169,26 @@
               <div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></div>
               <div class="form-grid" id="assumption-fields"></div>
             </section>
-            <section class="form-panel panel" aria-label="Tax and retirement income assumptions">
-              <div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax estimate.</p></div></div>
-              <div class="form-grid" id="tax-fields"></div>
+            <section class="form-panel panel" aria-label="Tax and retirement settings">
+              <div class="section-heading"><div><span class="panel-label">Tax and retirement settings</span><p>Core planning inputs for tax filing status, location, and Social Security.</p></div></div>
+              <div class="form-grid" id="basic-tax-fields"></div>
+              <p class="panel-supporting-text">Your Social Security benefit is assumed to be the Full Retirement Age (67) benefit. Claiming earlier reduces benefits; claiming later increases benefits.</p>
             </section>
-            <section class="notice-panel"><strong>Social Security and Roth conversion strategy moved</strong><p>The model now generates a recommended Social Security claiming age and Roth conversion plan automatically. Review and override both on the Timeline page.</p></section>
+            <section class="form-panel panel collapsible-panel" aria-label="Advanced tax and retirement settings">
+              <button type="button" class="collapsible-button" id="advanced-tax-toggle" aria-expanded="false" aria-controls="advanced-tax-content">
+                <span class="collapsible-header">
+                  <span class="collapsible-icon" aria-hidden="true">▶</span>
+                  <strong>Advanced Tax &amp; Retirement Settings</strong>
+                </span>
+              </button>
+              <div class="collapsible-content" id="advanced-tax-content" hidden>
+                <div class="collapsible-intro">
+                  <p>These settings allow more detailed tax and retirement modeling. Most users can leave the defaults unchanged.</p>
+                </div>
+                <div class="form-grid" id="advanced-tax-fields"></div>
+              </div>
+            </section>
+            <section class="notice-panel"><strong>Social Security claim age moved to Plan Setup</strong><p>Set your Social Security claim age directly on the Plan Setup page, next to the annual benefit. The Roth conversion strategy, and an optional model-recommended Social Security claiming age, remain on the Timeline page.</p></section>
           </section>
 
           <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
@@ -202,7 +217,19 @@
             </div>
             <section class="panel form-panel" aria-label="Contribution rates">
               <div class="section-heading"><div><span class="panel-label">Contribution rates</span><p>Employer match = employee 401(k) contribution × match rate, capped at the selected percentage of salary.</p></div></div>
-              <div class="form-grid" id="contribution-fields"></div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">Employer-sponsored</h3>
+                <div class="form-grid" id="contribution-fields-employer"></div>
+              </div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">IRA contributions</h3>
+                <p class="contribution-group-note">Enter a fixed annual dollar amount for each IRA. Traditional IRA contributions remain pre-tax; Roth IRA contributions remain after-tax.</p>
+                <div class="form-grid" id="contribution-fields-ira"></div>
+              </div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">Additional savings</h3>
+                <div class="form-grid" id="contribution-fields-additional"></div>
+              </div>
             </section>
             <div class="summary-strip">
               <div><span>Gross annual income</span><strong id="total-income">$0</strong></div>
@@ -226,7 +253,7 @@
             </div>
             <section class="panel timeline-strategy-panel" aria-label="Model-generated retirement strategy">
               <div class="panel-label">Model-generated retirement strategy</div>
-              <p class="panel-supporting-text">The model automatically generates a recommended Social Security claiming age, a Roth conversion plan, and a suggested funding sequence from your profile, assets, income, and expenses. Switch a strategy to Manual if you want to set your own values below; the same retirement engine still drives every projection.</p>
+              <p class="panel-supporting-text">By default, the plan uses the Social Security claim age set on Plan Setup and a model-recommended Roth conversion plan. Switch Social Security strategy to Model-recommended if you'd rather let the model search ages 62-70 for the claiming age that keeps your plan solvent longest; switch Roth conversion strategy to Manual to set your own annual amount. The same retirement engine still drives every projection.</p>
               <div id="strategy-summary" class="strategy-summary"></div>
               <div class="form-grid" id="strategy-fields"></div>
             </section>
@@ -289,12 +316,8 @@
         <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
       </main>
     </div>
-<<<<<<< HEAD
-    <script src="./data.js?v=4"></script>
-    <script src="./validation.js?v=1"></script>
-=======
-    <script src="./data.js?v=5"></script>
->>>>>>> 0e051600a488ac2b2352e959a0eda5f8dd2dcf71
-    <script src="./app.js?v=11"></script>
+    <script src="./data.js?v=6"></script>
+    <script src="./validation.js?v=2"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>

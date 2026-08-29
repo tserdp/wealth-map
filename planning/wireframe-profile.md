@@ -29,3 +29,7 @@
 - All displayed planning fields are editable.
 - Changes update the shared working state and all dependent pages.
 - Invalid ages or percentages show validation feedback.
+
+## Implementation note
+
+The shipped Plan Setup page also includes a "Tax and retirement settings" section with State, Tax filing status, Social Security annual benefit, and Social Security claim age (62-70, default 67, editable next to the annual benefit) always visible, plus a collapsible "Advanced Tax & Retirement Settings" section for less commonly changed assumptions. This wireframe predates that structure; see [wireframe-navigation.md](wireframe-navigation.md) and the shipped `index.html` for the current layout.

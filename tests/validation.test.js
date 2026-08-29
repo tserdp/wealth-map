@@ -19,10 +19,12 @@ function profile(overrides = {}) {
     otherAnnualIncome: 0,
     contributionRates: {
       fourOhOneK: 0.1,
-      traditionalIra: 0.02,
-      rothIra: 0.06,
       brokerage: 0.06,
       cash: 0.02,
+    },
+    iraContributions: {
+      traditionalIraAnnual: 3000,
+      rothIraAnnual: 6000,
     },
     employerMatch: { rate: 0.5, salaryCap: 0.03 },
     currentAnnualExpenses: 85000,
@@ -276,4 +278,133 @@ test("invalid saved profile loads with validation instead of silent replacement"
   );
   assert.ok(result.blockingErrors.some((item) => item.field === "currentAge"));
   assert.equal(isFieldBlockingError("currentAge", result.blockingErrors), true);
+});
+
+test("accepts Social Security claim ages within 62-70", () => {
+  const result = validatePlanSetup(profile({ socialSecurityClaimAge: 62 }));
+  assert.equal(result.blockingErrors.length, 0);
+  const resultFra = validatePlanSetup(profile({ socialSecurityClaimAge: 67 }));
+  assert.equal(resultFra.blockingErrors.length, 0);
+  const resultDelayed = validatePlanSetup(
+    profile({ socialSecurityClaimAge: 70 }),
+  );
+  assert.equal(resultDelayed.blockingErrors.length, 0);
+});
+
+test("flags a Social Security claim age outside 62-70", () => {
+  const tooEarly = validatePlanSetup(profile({ socialSecurityClaimAge: 61 }));
+  assert.ok(
+    tooEarly.blockingErrors.some(
+      (item) => item.field === "socialSecurityClaimAge",
+    ),
+  );
+  const tooLate = validatePlanSetup(profile({ socialSecurityClaimAge: 71 }));
+  assert.ok(
+    tooLate.blockingErrors.some(
+      (item) => item.field === "socialSecurityClaimAge",
+    ),
+  );
+});
+
+test("allows a missing Social Security claim age for backward compatibility", () => {
+  const legacy = profile();
+  delete legacy.socialSecurityClaimAge;
+  const result = validatePlanSetup(legacy);
+  assert.equal(result.blockingErrors.length, 0);
+});
+
+test("rejects a negative IRA contribution amount", () => {
+  const result = validatePlanSetup(
+    profile({
+      iraContributions: { traditionalIraAnnual: -1000, rothIraAnnual: 6000 },
+    }),
+  );
+  assert.ok(
+    result.blockingErrors.some(
+      (item) => item.field === "iraContributions.traditionalIraAnnual",
+    ),
+  );
+});
+
+test("allows a blank IRA contribution amount", () => {
+  const result = validatePlanSetup(
+    profile({
+      iraContributions: { traditionalIraAnnual: "", rothIraAnnual: 6000 },
+    }),
+  );
+  assert.equal(result.blockingErrors.length, 0);
+});
+
+test("rejects a non-numeric or non-finite IRA contribution amount", () => {
+  const nonNumeric = validatePlanSetup(
+    profile({
+      iraContributions: { traditionalIraAnnual: "abc", rothIraAnnual: 6000 },
+    }),
+  );
+  assert.ok(
+    nonNumeric.blockingErrors.some(
+      (item) => item.field === "iraContributions.traditionalIraAnnual",
+    ),
+  );
+
+  const infinite = validatePlanSetup(
+    profile({
+      iraContributions: {
+        traditionalIraAnnual: 3000,
+        rothIraAnnual: Number.POSITIVE_INFINITY,
+      },
+    }),
+  );
+  assert.ok(
+    infinite.blockingErrors.some(
+      (item) => item.field === "iraContributions.rothIraAnnual",
+    ),
+  );
+});
+
+test("warns when total contributions exceed available income", () => {
+  const result = validatePlanSetup(
+    profile({
+      annualSalary: 20000,
+      otherAnnualIncome: 0,
+      iraContributions: { traditionalIraAnnual: 15000, rothIraAnnual: 10000 },
+    }),
+  );
+  assert.ok(
+    result.warnings.some(
+      (item) => item.field === "iraContributions.traditionalIraAnnual",
+    ),
+  );
+  assert.equal(result.blockingErrors.length, 0);
+});
+
+test("warns when IRA contributions are unusually high relative to income", () => {
+  const result = validatePlanSetup(
+    profile({
+      annualSalary: 40000,
+      otherAnnualIncome: 0,
+      iraContributions: { traditionalIraAnnual: 15000, rothIraAnnual: 15000 },
+    }),
+  );
+  assert.ok(
+    result.warnings.some(
+      (item) => item.field === "iraContributions.rothIraAnnual",
+    ),
+  );
+});
+
+test("warns when contributions create a negative annual cash-flow position", () => {
+  const result = validatePlanSetup(
+    profile({
+      annualSalary: 50000,
+      otherAnnualIncome: 0,
+      currentAnnualExpenses: 40000,
+      iraContributions: { traditionalIraAnnual: 8000, rothIraAnnual: 8000 },
+    }),
+  );
+  assert.ok(
+    result.warnings.some(
+      (item) => item.field === "iraContributions.rothIraAnnual",
+    ),
+  );
 });

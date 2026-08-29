@@ -19,6 +19,8 @@
     "niitThreshold",
     "irmaaIncomeThreshold",
     "irmaaAnnualSurcharge",
+    "iraContributions.traditionalIraAnnual",
+    "iraContributions.rothIraAnnual",
     "assets.brokerage",
     "assets.fourOhOneK",
     "assets.traditionalIra",
@@ -36,8 +38,6 @@
     "preTaxWithdrawalTaxRate",
     "socialSecurityTaxablePercent",
     "contributionRates.fourOhOneK",
-    "contributionRates.traditionalIra",
-    "contributionRates.rothIra",
     "contributionRates.brokerage",
     "contributionRates.cash",
     "employerMatch.rate",
@@ -220,6 +220,27 @@
     });
   }
 
+  function validateSocialSecurityClaimAge(profile, errors) {
+    const value = getPath(profile, "socialSecurityClaimAge");
+    if (isBlank(value)) return;
+    const number = safeNumber(value);
+    if (!Number.isFinite(number)) {
+      addError(
+        errors,
+        "socialSecurityClaimAge",
+        "Social Security claim age must be a valid number.",
+      );
+      return;
+    }
+    if (number < 62 || number > 70) {
+      addError(
+        errors,
+        "socialSecurityClaimAge",
+        "Social Security claim age must be between 62 and 70.",
+      );
+    }
+  }
+
   function validateWarnings(profile, warnings) {
     const annualSalary = safeNumber(getPath(profile, "annualSalary")) || 0;
     const otherIncome = safeNumber(getPath(profile, "otherAnnualIncome")) || 0;
@@ -247,8 +268,6 @@
 
     const contributions = [
       "contributionRates.fourOhOneK",
-      "contributionRates.traditionalIra",
-      "contributionRates.rothIra",
       "contributionRates.brokerage",
       "contributionRates.cash",
     ].reduce((sum, field) => {
@@ -256,11 +275,48 @@
       return sum + value;
     }, 0);
 
+    const traditionalIraAnnual =
+      safeNumber(getPath(profile, "iraContributions.traditionalIraAnnual")) ||
+      0;
+    const rothIraAnnual =
+      safeNumber(getPath(profile, "iraContributions.rothIraAnnual")) || 0;
+    const iraAnnualTotal = traditionalIraAnnual + rothIraAnnual;
+
     if (contributions > 1 && totalIncome > 0) {
       addWarning(
         warnings,
         "contributionRates.fourOhOneK",
         "Employee contributions are high relative to available income.",
+      );
+    }
+
+    if (
+      totalIncome > 0 &&
+      contributions * totalIncome + iraAnnualTotal > totalIncome
+    ) {
+      addWarning(
+        warnings,
+        "iraContributions.traditionalIraAnnual",
+        "Total contributions exceed available income.",
+      );
+    }
+
+    if (totalIncome > 0 && iraAnnualTotal > totalIncome * 0.5) {
+      addWarning(
+        warnings,
+        "iraContributions.rothIraAnnual",
+        "IRA contributions are unusually high relative to income.",
+      );
+    }
+
+    if (
+      totalIncome > 0 &&
+      totalIncome - currentAnnualExpenses - iraAnnualTotal < 0
+    ) {
+      addWarning(
+        warnings,
+        "iraContributions.rothIraAnnual",
+        "IRA contributions combined with expenses create a negative annual cash-flow position.",
       );
     }
 
@@ -332,6 +388,7 @@
     validateAgeRelationship(profile, blockingErrors);
     validateMonetaryFields(profile, blockingErrors);
     validatePercentFields(profile, blockingErrors);
+    validateSocialSecurityClaimAge(profile, blockingErrors);
     validateWarnings(profile, warnings);
 
     return {
