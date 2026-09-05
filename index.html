@@ -250,18 +250,59 @@
                 <div class="form-grid" id="contribution-fields-ira"></div>
               </div>
               <div class="contribution-group">
-                <h3 class="contribution-group-heading">Available savings allocation</h3>
-                <p class="contribution-group-note">Splits Available Annual Savings (<strong id="available-annual-savings">$0</strong> after taxes, current expenses, and the Roth IRA contribution) between a taxable brokerage account and cash: Brokerage <strong id="brokerage-contribution-amount">$0</strong> · Cash <strong id="cash-contribution-amount">$0</strong>.</p>
+                  <div class="metric-label-row has-help">
+                    <h3 class="contribution-group-heading">Additional Annual Savings</h3>
+                    <button class="info-button metric-help-button" id="additional-annual-savings-help-button" type="button" data-help-target="additional-annual-savings-help" aria-expanded="false" aria-controls="additional-annual-savings-help" aria-label="About Additional Annual Savings">i</button>
+                    <div class="metric-help" id="additional-annual-savings-help" role="tooltip" data-help-button-id="additional-annual-savings-help-button" hidden>
+                      <strong>Additional Annual Savings</strong>
+                      <p>Money remaining after estimated taxes, current expenses, and retirement account contributions. WealthMap allocates this amount between Brokerage and Cash based on your selected percentages.</p>
+                    </div>
+                  </div>
+                  <p class="contribution-group-note">Additional Annual Savings (<strong id="available-annual-savings">$0</strong>) is allocated between Brokerage Contribution <strong id="brokerage-contribution-amount">$0</strong> and Cash Contribution <strong id="cash-contribution-amount">$0</strong>.</p>
                 <div class="form-grid" id="contribution-fields-additional"></div>
               </div>
             </section>
             <div class="summary-strip">
               <div><span>Gross annual income</span><strong id="total-income">$0</strong></div>
-              <div><span>After-tax annual surplus</span><strong id="annual-surplus">$0</strong></div>
-              <div><span>Annual savings rate</span><strong id="savings-rate">0%</strong></div>
-              <div><span>Employee annual savings</span><strong id="employee-savings">$0</strong></div>
-              <div><span>Employer 401(k) match</span><strong id="employer-match">$0</strong></div>
-              <div><span>Total retirement contributions</span><strong id="retirement-contributions">$0</strong></div>
+              <div>
+                <span>After-tax income</span>
+                <strong id="after-tax-income">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Total Retirement Contributions<button class="info-button metric-help-button" id="total-retirement-contributions-help-button" type="button" data-help-target="total-retirement-contributions-help" aria-expanded="false" aria-controls="total-retirement-contributions-help" aria-label="About Total Retirement Contributions">i</button>
+                  <div class="metric-help" id="total-retirement-contributions-help" role="tooltip" data-help-button-id="total-retirement-contributions-help-button" hidden>
+                    <strong>Total Retirement Contributions</strong>
+                    <p>The total amount contributed each year to retirement accounts, including employee contributions and employer matching contributions.</p>
+                    <p>This includes 401(k), Traditional IRA, Roth IRA, and Employer Match contributions.</p>
+                    <p>These contributions are intended to support your long-term retirement goals.</p>
+                  </div>
+                </div>
+                <strong id="retirement-contributions">$0</strong>
+              </div>
+              <div>
+                <span>Additional Annual Savings</span>
+                <strong id="available-annual-savings-summary">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Total Annual Savings<button class="info-button metric-help-button" id="total-annual-savings-help-button" type="button" data-help-target="total-annual-savings-help" aria-expanded="false" aria-controls="total-annual-savings-help" aria-label="About Total Annual Savings">i</button>
+                  <div class="metric-help" id="total-annual-savings-help" role="tooltip" data-help-button-id="total-annual-savings-help-button" hidden>
+                    <strong>Total Annual Savings</strong>
+                    <p>The total amount saved each year across retirement accounts, employer matching contributions, brokerage investments, and cash savings.</p>
+                    <p>This includes 401(k), Traditional IRA, Roth IRA, Employer Match, Brokerage Contributions, and Cash Contributions.</p>
+                    <p>This metric helps you understand how much of your annual income is being directed toward your long-term financial goals.</p>
+                  </div>
+                </div>
+                <strong id="total-annual-savings">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Annual Savings Rate<button class="info-button metric-help-button" id="annual-savings-rate-help-button" type="button" data-help-target="annual-savings-rate-help" aria-expanded="false" aria-controls="annual-savings-rate-help" aria-label="About Annual Savings Rate">i</button>
+                  <div class="metric-help" id="annual-savings-rate-help" role="tooltip" data-help-button-id="annual-savings-rate-help-button" hidden>
+                    <strong>Annual Savings Rate</strong>
+                    <p>Your retirement account contributions and Additional Annual Savings, divided by gross annual income. WealthMap uses 20% as its savings-rate benchmark for retirement readiness.</p>
+                  </div>
+                </div>
+                <strong id="savings-rate">0%</strong>
+              </div>
             </div>
           </section>
 

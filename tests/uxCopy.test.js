@@ -76,6 +76,130 @@ test("metric help buttons are wired through delegated, keyboard-triggerable clic
   assert.ok(appJs.includes('closest(".metric-help-button")'));
 });
 
+test("additional annual savings explains the brokerage and cash allocation", () => {
+  assert.ok(indexHtml.includes("Additional Annual Savings"));
+  assert.ok(!indexHtml.includes("Available Annual Savings"));
+  assert.ok(indexHtml.includes('id="additional-annual-savings-help-button"'));
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="additional-annual-savings-help" aria-label="About Additional Annual Savings"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Money remaining after estimated taxes, current expenses, and retirement account contributions. WealthMap allocates this amount between Brokerage and Cash based on your selected percentages.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'Additional Annual Savings (<strong id="available-annual-savings">$0</strong>) is allocated between Brokerage Contribution',
+    ),
+  );
+  assert.ok(appJs.includes('"% of Additional Annual Savings"'));
+  assert.ok(
+    appJs.includes(
+      "Percentage of Additional Annual Savings allocated to a taxable brokerage account.",
+    ),
+  );
+  assert.ok(
+    appJs.includes(
+      "Percentage of Additional Annual Savings allocated to cash reserves.",
+    ),
+  );
+});
+
+test("annual savings rate has an accessible explanatory tooltip", () => {
+  assert.ok(indexHtml.includes('id="annual-savings-rate-help-button"'));
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="annual-savings-rate-help" aria-label="About Annual Savings Rate"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'id="annual-savings-rate-help" role="tooltip" data-help-button-id="annual-savings-rate-help-button" hidden',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Your retirement account contributions and Additional Annual Savings, divided by gross annual income. WealthMap uses 20% as its savings-rate benchmark for retirement readiness.",
+    ),
+  );
+});
+
+test("total retirement contributions has an accessible explanation of retirement savings", () => {
+  assert.ok(indexHtml.includes("Total Retirement Contributions"));
+  assert.ok(!indexHtml.includes("Your Annual Savings"));
+  assert.ok(
+    indexHtml.includes('id="total-retirement-contributions-help-button"'),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="total-retirement-contributions-help" aria-label="About Total Retirement Contributions"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'id="total-retirement-contributions-help" role="tooltip" data-help-button-id="total-retirement-contributions-help-button" hidden',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "The total amount contributed each year to retirement accounts, including employee contributions and employer matching contributions.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "This includes 401(k), Traditional IRA, Roth IRA, and Employer Match contributions.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "These contributions are intended to support your long-term retirement goals.",
+    ),
+  );
+  assert.ok(indexHtml.includes('id="retirement-contributions"'));
+});
+
+test("total annual savings has an accessible explanation of all contributions", () => {
+  assert.ok(indexHtml.includes("Total Annual Savings"));
+  assert.ok(!indexHtml.includes("Total retirement contributions"));
+  assert.ok(indexHtml.includes('id="total-annual-savings-help-button"'));
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="total-annual-savings-help" aria-label="About Total Annual Savings"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'id="total-annual-savings-help" role="tooltip" data-help-button-id="total-annual-savings-help-button" hidden',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "The total amount saved each year across retirement accounts, employer matching contributions, brokerage investments, and cash savings.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "This includes 401(k), Traditional IRA, Roth IRA, Employer Match, Brokerage Contributions, and Cash Contributions.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "This metric helps you understand how much of your annual income is being directed toward your long-term financial goals.",
+    ),
+  );
+  assert.ok(indexHtml.includes('id="total-annual-savings"'));
+  assert.ok(indexHtml.includes('id="available-annual-savings-summary"'));
+});
+
+test("the redundant after-tax annual surplus metric is removed from Income and Expenses", () => {
+  assert.ok(!indexHtml.includes("After-tax annual surplus"));
+  assert.ok(!indexHtml.includes('id="annual-surplus"'));
+  assert.ok(!appJs.includes('setText("#annual-surplus"'));
+});
+
 test("no blank notice-panel section remains where removed content used to be", () => {
   assert.ok(!indexHtml.includes('<section class="notice-panel">'));
 });

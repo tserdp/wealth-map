@@ -118,7 +118,7 @@ test("Roth IRA contribution does not change taxable income (after-tax)", () => {
   assert.equal(withoutRoth.currentFederalTax, withRoth.currentFederalTax);
 });
 
-test("IRA contributions feed employee savings and total retirement contributions", () => {
+test("IRA contributions feed employee savings, retirement contributions, and total annual savings", () => {
   const contributions = calculateContributions(
     profile({
       iraContributions: { traditionalIraAnnual: 3000, rothIraAnnual: 6000 },
@@ -131,7 +131,16 @@ test("IRA contributions feed employee savings and total retirement contributions
   );
   assert.equal(
     contributions.totalRetirementContributions,
-    contributions.employeeSavings + contributions.employerFourOhOneKMatch,
+    contributions.employeeFourOhOneK +
+      contributions.traditionalIra +
+      contributions.rothIra +
+      contributions.employerFourOhOneKMatch,
+  );
+  assert.equal(
+    contributions.totalAnnualSavings,
+    contributions.totalRetirementContributions +
+      contributions.brokerage +
+      contributions.cash,
   );
 });
 

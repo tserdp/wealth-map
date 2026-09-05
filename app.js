@@ -360,6 +360,9 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
   );
   const employeeSavings =
     employeePreTaxContributions + employeePostTaxContributions;
+  const totalRetirementContributions =
+    employeeFourOhOneK + traditionalIra + rothIra + employerFourOhOneKMatch;
+  const totalAnnualSavings = totalRetirementContributions + brokerage + cash;
 
   return {
     earnedIncome,
@@ -377,7 +380,8 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
     employeePostTaxContributions,
     employeeSavings,
     employerFourOhOneKMatch,
-    totalRetirementContributions: employeeSavings + employerFourOhOneKMatch,
+    totalRetirementContributions,
+    totalAnnualSavings,
   };
 }
 
@@ -776,6 +780,7 @@ function calculate(rawProfile) {
     employeeSavings: contributions.employeeSavings,
     employerFourOhOneKMatch: contributions.employerFourOhOneKMatch,
     totalRetirementContributions: contributions.totalRetirementContributions,
+    totalAnnualSavings: contributions.totalAnnualSavings,
     yearsToTarget,
     projectedAssets,
     requiredAssets,
@@ -1482,14 +1487,14 @@ function inputConfig() {
         "savingsAllocation.brokerage",
         "Brokerage Allocation %",
         "percent",
-        "% of available annual savings",
+        "% of Additional Annual Savings",
         75,
       ],
       [
         "savingsAllocation.cash",
         "Cash Allocation %",
         "percent",
-        "% of available annual savings",
+        "% of Additional Annual Savings",
         25,
       ],
     ],
@@ -1533,11 +1538,11 @@ const PLAN_SETUP_FIELD_HELP = {
   },
   "savingsAllocation.brokerage": {
     title: "Brokerage Allocation %",
-    text: "Percentage of available annual savings allocated to a taxable brokerage account after taxes and living expenses.",
+    text: "Percentage of Additional Annual Savings allocated to a taxable brokerage account.",
   },
   "savingsAllocation.cash": {
     title: "Cash Allocation %",
-    text: "Percentage of available annual savings allocated to cash reserves after taxes and living expenses.",
+    text: "Percentage of Additional Annual Savings allocated to cash reserves.",
   },
   cashReserveTargetYears: {
     title: "Cash Reserve (Years of Spending)",
@@ -2389,14 +2394,17 @@ function renderMetrics() {
   setText("#financial-assets-total", money(metrics.financialAssets));
   setText("#total-assets", money(metrics.totalAssets));
   setText("#total-income", money(metrics.totalIncome));
-  setText("#annual-surplus", money(metrics.surplus));
+  setText("#after-tax-income", money(metrics.afterTaxIncome));
   setText("#savings-rate", percent(metrics.savingsRate));
-  setText("#employee-savings", money(metrics.employeeSavings));
-  setText("#employer-match", money(metrics.employerFourOhOneKMatch));
   setText(
     "#retirement-contributions",
     money(metrics.totalRetirementContributions),
   );
+  setText(
+    "#available-annual-savings-summary",
+    money(metrics.availableAnnualSavings),
+  );
+  setText("#total-annual-savings", money(metrics.totalAnnualSavings));
   setText("#available-annual-savings", money(metrics.availableAnnualSavings));
   setText(
     "#brokerage-contribution-amount",
