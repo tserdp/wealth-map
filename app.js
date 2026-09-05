@@ -1806,16 +1806,56 @@ function renderFormFields() {
 
 function renderAssetFields() {
   const container = $("#asset-fields");
-  const rows = Object.keys(ASSET_METADATA)
-    .filter((key) => key !== "realEstate")
-    .map((key) => {
+  const groups = [
+    {
+      label: "Liquid assets",
+      tooltipId: "liquid-assets-help",
+      tooltipTitle: "Liquid Assets",
+      tooltipText:
+        "Cash available for reserves and retirement spending. WealthMap uses cash as the first withdrawal source during retirement.",
+      keys: ["cash"],
+    },
+    {
+      label: "Taxable assets",
+      tooltipId: "taxable-assets-help",
+      tooltipTitle: "Taxable Assets",
+      tooltipText:
+        "Investment accounts that may generate taxable gains and investment income. WealthMap models applicable taxes on brokerage growth.",
+      keys: ["brokerage"],
+    },
+    {
+      label: "Tax-deferred retirement assets",
+      tooltipId: "tax-deferred-assets-help",
+      tooltipTitle: "Tax-Deferred Retirement Assets",
+      tooltipText:
+        "Includes 401(k) and Traditional IRA balances. WealthMap models these accounts together for retirement withdrawals, Roth conversions, future taxes, and required minimum distributions.",
+      keys: ["fourOhOneK", "traditionalIra"],
+    },
+    {
+      label: "Tax-free retirement assets",
+      tooltipId: "tax-free-assets-help",
+      tooltipTitle: "Tax-Free Retirement Assets",
+      tooltipText:
+        "Roth assets that are modeled as growing and being withdrawn tax-free, providing greater tax flexibility during retirement.",
+      keys: ["rothIra"],
+    },
+  ];
+  const sections = groups.map((group) => {
+    const section = document.createElement("section");
+    section.className = "asset-group";
+    const helpButtonId = `${group.tooltipId}-button`;
+    section.innerHTML = `<div class="asset-group-heading"><div class="metric-label-row has-help"><h3>${group.label}</h3><button class="info-button metric-help-button" id="${helpButtonId}" type="button" data-help-target="${group.tooltipId}" aria-expanded="false" aria-controls="${group.tooltipId}" aria-label="About ${group.tooltipTitle}">i</button><div class="metric-help" id="${group.tooltipId}" role="tooltip" data-help-button-id="${helpButtonId}" hidden><strong>${group.tooltipTitle}</strong><p>${group.tooltipText}</p></div></div></div>`;
+    const rows = group.keys.map((key) => {
       const metadata = ASSET_METADATA[key];
       const row = document.createElement("div");
       row.className = "asset-row";
       row.innerHTML = `<div class="asset-label"><span>${metadata.label}</span><small>${metadata.interpretation}</small></div><span class="tax-tag">${metadata.treatment}</span><input data-field="assets.${key}" data-type="currency" type="number" min="0" step="1000" value="${workingProfile.assets[key]}" aria-label="${metadata.label} balance" /><div class="field-message" aria-live="polite"></div>`;
       return row;
     });
-  container.replaceChildren(...rows);
+    section.append(...rows);
+    return section;
+  });
+  container.replaceChildren(...sections);
   $("#realEstate").value = workingProfile.assets.realEstate;
   $("#realEstate").dataset.type = "currency";
   $("#realEstate").setAttribute("aria-invalid", "false");
@@ -2344,8 +2384,9 @@ function renderMetrics() {
   setText("#funding-gap", money(Math.abs(metrics.fundingDelta)));
   setText("#safe-spending", money(metrics.safeSpending));
   setText("#spending-goal", money(workingProfile.retirementAnnualSpendingGoal));
+  setText("#financial-assets-summary", money(metrics.financialAssets));
+  setText("#total-assets-summary", money(metrics.totalAssets));
   setText("#financial-assets-total", money(metrics.financialAssets));
-  setText("#financial-assets-total-bottom", money(metrics.financialAssets));
   setText("#total-assets", money(metrics.totalAssets));
   setText("#total-income", money(metrics.totalIncome));
   setText("#annual-surplus", money(metrics.surplus));

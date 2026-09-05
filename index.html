@@ -194,15 +194,42 @@
             <div class="page-intro">
               <div><span class="eyebrow">WHERE YOUR MONEY LIVES</span><h2 id="assets-heading">Assets</h2><p>Balances grouped by account type and simplified tax treatment.</p></div>
             </div>
-            <section class="panel table-panel" aria-label="Investable assets">
-              <div class="table-header"><div><span class="panel-label">Investable assets</span><p>Real estate is shown separately from the retirement portfolio.</p></div><strong id="financial-assets-total">$0</strong></div>
-              <div id="asset-fields"></div>
-              <div class="table-footer"><span>Financial assets total</span><strong id="financial-assets-total-bottom">$0</strong></div>
+            <section class="panel asset-summary" aria-labelledby="asset-summary-heading">
+              <span class="panel-label" id="asset-summary-heading">Asset summary</span>
+              <div class="asset-summary-grid">
+                <div>
+                  <span>Financial Assets</span>
+                  <strong id="financial-assets-summary">$0</strong>
+                </div>
+                <div>
+                  <span>Total Assets</span>
+                  <strong id="total-assets-summary">$0</strong>
+                </div>
+              </div>
             </section>
-            <section class="panel real-estate-panel" aria-label="Other assets">
-              <div><span class="panel-label">Other assets</span><p>Not automatically treated as spendable portfolio assets.</p></div>
-              <div class="inline-field"><label for="realEstate">Real estate</label><input id="realEstate" data-field="assets.realEstate" type="number" min="0" step="1000" inputmode="decimal" /><span>USD</span></div>
-              <div class="comparison"><span>Total assets</span><strong id="total-assets">$0</strong></div>
+            <section class="panel table-panel" aria-label="Investable assets">
+              <div class="table-header"><div><span class="panel-label">Investable assets</span><p>Accounts used in your retirement projection.</p></div><strong id="financial-assets-total">$0</strong></div>
+              <div id="asset-fields"></div>
+            </section>
+            <section class="panel table-panel other-assets-panel" aria-label="Other assets">
+              <div class="table-header">
+                <div>
+                  <span class="panel-label">Other assets</span>
+                  <p>Real estate is shown separately from the retirement portfolio.</p>
+                </div>
+                <div class="metric-label-row has-help">
+                  <button class="info-button metric-help-button" id="other-assets-help-button" type="button" data-help-target="other-assets-help" aria-expanded="false" aria-controls="other-assets-help" aria-label="About Other Assets">i</button>
+                  <div class="metric-help" id="other-assets-help" role="tooltip" data-help-button-id="other-assets-help-button" hidden>
+                    <strong>Other Assets</strong>
+                    <p>Assets included in total assets but not currently modeled as retirement income or available funds within WealthMap projections.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <div class="asset-label"><label for="realEstate">Real estate</label><small>Included in total assets, not the retirement projection</small></div>
+                <span class="tax-tag">Separate asset</span>
+                <input id="realEstate" data-field="assets.realEstate" type="number" min="0" step="1000" inputmode="decimal" aria-label="Real estate balance in USD" />
+              </div>
             </section>
           </section>
 
