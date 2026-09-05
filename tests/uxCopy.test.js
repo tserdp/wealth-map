@@ -155,3 +155,12 @@ test("plan setup contextual help covers the required fields with concise, user-f
     assert.ok(appJs.includes(text), `missing help text for: ${title}`);
   });
 });
+
+test("other assets tooltip informs the user that real estate is shown separately from the retirement portfolio", () => {
+  assert.ok(
+    indexHtml.includes('id="other-assets-help"') &&
+      indexHtml.includes(
+        "Real estate is shown separately from the retirement portfolio.",
+      ),
+  );
+});
