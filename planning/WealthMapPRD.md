@@ -14,9 +14,9 @@ The product is an educational decision-support tool, not a net-worth tracker or 
 
 ### Research foundation and product vision
 
-The included repository files `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` are the research foundation for the longer-term product. Both are read-only reference artifacts stored alongside the other planning documents. Together they model retirement planning as a timeline of income, spending, account balances, taxes, Roth conversions, Social Security, and required minimum distributions (RMDs). The prototype must not reproduce either workbook's full calculation engine, but its data model and calculation layer should leave room for those capabilities; the Wealth Timeline page and the RMD divisor table, NIIT, and Social Security claiming-age comparison are the first steps in that direction.
+The calculation model and planning documents define the research foundation for the longer-term product. The prototype must not reproduce a full tax-planning engine, but its data model and calculation layer should leave room for those capabilities; the Wealth Timeline page and the RMD divisor table, NIIT, and Social Security claiming-age comparison are the first steps in that direction.
 
-The prototype must not require either workbook to be loaded in the browser and must not modify them. P0 calculations use the simplified rules in this PRD. Future tax-aware features may use documented workbook scenarios for validation.
+P0 calculations use the simplified rules in this PRD. Future tax-aware features should validate documented scenarios against the deterministic calculation model before implementation.
 
 The long-term product should help users answer decision-oriented questions:
 
@@ -455,7 +455,6 @@ The full RMD divisor table, NIIT surtax, wealth-timeline accumulation/decumulati
 - Avoid hard-coding calculated results into page markup.
 - Handle missing, zero, and invalid numeric values without breaking the UI.
 - Include a README with local run instructions and a short explanation of the prototype assumptions.
-- Treat `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` as read-only research and validation references, not as runtime dependencies.
 
 ## 13. Expected Deliverables
 
@@ -540,15 +539,7 @@ The app may use additional files if they improve clarity, but it must remain sim
 - Create a small set of documented input scenarios and expected outputs before implementing tax-aware features.
 - Compare future tax, Roth conversion, Social Security, and RMD results against selected workbook outputs.
 - Record which workbook assumptions are supported, simplified, or intentionally excluded.
-- Keep `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` unchanged when building or running the prototype; both are read-only research and validation references, never loaded at runtime.
-- Do not import workbook formulas into the prototype without first defining their inputs, outputs, units, and edge-case behavior.
 - Treat ending account balances as incomplete measures of household wealth when modeled RMD cash has left the tracked accounts.
-
-### Cross-checked against `planning/Retirement_Calculator.xlsx`
-
-- The RMD divisor table (ages 72-95) was copied directly from that workbook's Assumptions sheet and matches for the overlapping age range; ages 96-100 and beyond extend the same IRS Uniform Lifetime Table pattern and are not present in the workbook.
-- The Social Security early-claim reduction (5/9% per month for the first 36 months, 5/12% per month beyond that) and delayed-claim credit (2/3% per month, 8% per year) match the constants embedded in that workbook's Social Security sheet formulas.
-- Known differences: the workbook models a married couple with spousal Social Security benefits and exact claim dates; the prototype models a single benefit input and whole-year ages only. The workbook's brokerage tax formula stacks ordinary income and long-term capital gains through real IRS brackets plus NIIT; the prototype uses an editable flat taxable-gains rate plus the same NIIT rule, not full bracket stacking. The workbook's cash-reserve rule tops up a fixed target every year; the prototype's cash-reserve buffer only refills from brokerage in a positive-return year, to more directly illustrate sequence-of-returns risk.
 
 ## 17. Product and Financial Disclaimer
 

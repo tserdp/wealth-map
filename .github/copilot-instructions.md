@@ -14,8 +14,6 @@ The following files are authoritative and must be kept aligned with the implemen
 - `planning/wireframe-retirement-readiness.md`: primary Retirement Health Score, timing, funding, spending, and assumptions layout.
 - `planning/wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and prototype boundaries.
 - `planning/calculation-model.md`: the full deterministic calculation model, including the wealth-timeline engine, RMD divisor table, NIIT, and Social Security claiming-age comparison.
-- `planning/Wealth_Statement.xlsx`: read-only research and validation reference. It is not a runtime dependency and must never be modified.
-- `planning/Retirement_Calculator.xlsx`: second read-only research and validation reference. It is not a runtime dependency and must never be modified.
 
 ## Product Purpose
 
@@ -161,7 +159,7 @@ The Readiness view is the primary landing view. Use responsive layouts, stacked 
 
 ## Financial and Research Boundaries
 
-`planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` are read-only research artifacts. Do not load either in the browser, alter them, or treat them as runtime dependencies. P0 uses the simplified rules above. Future tax-aware work may validate documented scenarios against either workbook before implementing more detailed formulas.
+P0 uses the simplified rules above. Future tax-aware work should validate documented scenarios against the deterministic calculation model before implementing more detailed formulas.
 
 The prototype must clearly state that results are simplified educational estimates and not financial, tax, or legal advice.
 
