@@ -23,7 +23,7 @@
 |     Trigger: most investable assets are tax-deferred.                         |
 |     Current metric: tax-deferred share of investable assets.                   |
 |     Suggested action: learn about account withdrawal sequencing.               |
-|     Effect: not modeled in prototype.                                         |
+|     Effect: qualitative; no calculated impact is shown.                        |
 |                                                                                |
 | Tax, Roth conversion, Social Security, IRMAA, and RMD suggestions are          |
 | educational future-feature examples only; no related calculation is performed.|

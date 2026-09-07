@@ -12,14 +12,15 @@ The following files are authoritative and must be kept aligned with the implemen
 - `planning/wireframe-assets.md`: editable account balances, tax-treatment labels, and asset totals.
 - `planning/wireframe-income-expenses.md`: editable income, savings, expenses, surplus, and savings-rate layout.
 - `planning/wireframe-retirement-readiness.md`: primary Retirement Health Score, timing, funding, spending, and assumptions layout.
-- `planning/wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and prototype boundaries.
+- `planning/wireframe-timeline.md`: Wealth Timeline workbench, strategy controls, milestones, portfolio composition, and per-age overrides.
+- `planning/wireframe-recommendations.md`: prioritized recommendations, triggers, metrics, rationale, and product boundaries.
 - `planning/calculation-model.md`: the full deterministic calculation model, including the wealth-timeline engine, RMD divisor table, NIIT, and Social Security claiming-age comparison.
 
 ## Product Purpose
 
-Wealth Map is a client-side retirement-planning prototype. It helps users understand whether they are on track to retire, identify a funding gap or surplus, estimate an expected retirement age, and decide what actions to consider today.
+Wealth Map is a retirement-planning application with a browser-based planning experience and persisted plan data. It helps users understand whether they are on track to retire, identify a funding gap or surplus, estimate an expected retirement age, and decide what actions to consider today.
 
-This is an educational decision-support tool, not a net-worth tracker, financial-advice service, or replacement for the workbook's full planning engine. The long-term product may answer:
+This is an educational decision-support tool, not a net-worth tracker or financial-advice service. The application may help users explore:
 
 - Can I retire at my target age?
 - Which account should I spend from first?
@@ -28,9 +29,9 @@ This is an educational decision-support tool, not a net-worth tracker, financial
 - How much can I sustainably spend?
 - How can I reduce lifetime taxes?
 
-## Prototype Scope
+## Product Scope
 
-The prototype must provide six navigable views:
+The application must provide six navigable views:
 
 1. Profile
 2. Assets
@@ -39,7 +40,7 @@ The prototype must provide six navigable views:
 5. Wealth Timeline
 6. Recommendations
 
-The primary MVP result is the Retirement Health Score. The prototype must show:
+The primary result is the Retirement Health Score. The application must show:
 
 - A score from 0 to 100
 - On Track, Slightly Behind, or Major Shortfall status
@@ -50,14 +51,15 @@ The primary MVP result is the Retirement Health Score. The prototype must show:
 - Safe annual spending estimate
 - Up to three prioritized, rule-based recommendations
 
-All core profile, asset, income, expense, and projection-assumption fields must be editable. Valid edits must update the shared state, all derived metrics, and all dependent views without a page reload. A reset control must restore the original sample dataset.
+All core profile, asset, income, expense, and projection-assumption fields must be editable. Valid edits must update the shared working state, persist through the application service, update all derived metrics and dependent views without a page reload, and remain available when the user returns to the plan. A reset control must restore the original sample dataset without deleting the user's saved plan unless explicitly requested.
 
 ## Technical Constraints
 
-- Use HTML5, CSS3, and modern vanilla JavaScript.
-- Keep the app static and client-side.
-- Do not add a framework, backend, database, build step, package manager, authentication, external API, or account aggregation service for P0.
-- Keep the app compatible with GitHub Pages and direct opening of `index.html` at the repository root.
+- Use HTML5, CSS3, and modern vanilla JavaScript for the browser experience unless the product requirements approve another approach.
+- The first release must include an application service and database for persisted plans, user data, and server-side validation. Do not treat in-memory state or browser storage as the system of record.
+- Keep the persistence boundary explicit: validate and authorize data at the server boundary, persist versioned plan data, and return clear errors to the browser.
+- Do not add account aggregation, live market data, or external financial APIs without updating the product requirements and deployment plan.
+- Keep the browser experience usable independently of the persistence implementation, but do not present the app as static-hosting-only or database-free.
 - Keep data, calculations, rendering, navigation, and styling in understandable separate files.
 - Keep the original sample dataset immutable and maintain a separate working state.
 - Use one update flow: validate input, update working state, recalculate derived values, then render dependent views.
@@ -84,7 +86,7 @@ The sample profile should include:
 
 Account classifications:
 
-| Account           | Tax treatment                  | Prototype interpretation                     |
+| Account           | Tax treatment                  | Product interpretation                       |
 | ----------------- | ------------------------------ | -------------------------------------------- |
 | Taxable brokerage | Taxable                        | Flexible withdrawals; gains may be taxable   |
 | 401(k)            | Tax-deferred                   | Future withdrawals may be taxable            |
@@ -135,7 +137,7 @@ Generate zero to three recommendations, ordered by priority. Each recommendation
 
 Recommendations may address savings rate, retirement timing, spending goal, and tax diversification at an educational level. Do not invent tax savings, Roth conversion amounts, Social Security benefits, IRMAA costs, or RMD values.
 
-Full tax optimization, Roth conversion optimization, Social Security claiming optimization, Monte Carlo, estate planning, and account aggregation remain deferred. P0 may show simplified tax, conversion, Social Security, IRMAA, and RMD estimates, but must label them as illustrative and must not invent unsupported detail. The Social Security claiming-age comparison and the RMD divisor table are illustrative estimates already implemented in P0; they are not claiming optimization or a full RMD cash-flow/alerting engine.
+Full tax optimization, Roth conversion optimization, Social Security claiming optimization, Monte Carlo, estate planning, and account aggregation remain future capabilities. The current release may show simplified tax, conversion, Social Security, IRMAA, and RMD estimates, but must label them as illustrative and must not invent unsupported detail. The Social Security claiming-age comparison and the RMD divisor table are illustrative estimates; they are not claiming optimization or a full RMD cash-flow/alerting engine.
 
 ## Navigation and Layout
 
@@ -157,11 +159,24 @@ Mobile uses a collapsed header menu. The drawer must:
 
 The Readiness view is the primary landing view. Use responsive layouts, stacked cards on mobile, editable controls with units, and clear gap/surplus states.
 
+## Wealth Timeline Requirements
+
+The Wealth Timeline is a first-class retirement-planning workbench, not a secondary chart. Keep its layout and interactions aligned with `planning/wireframe-timeline.md` and the shared calculation model.
+
+- Show the projected path from current age through life expectancy, summary metrics for final assets, projected depletion, and the number of years with overrides.
+- Show Social Security and Roth conversion strategy controls as distinct from the core Plan Setup assumptions. Label model-generated strategies as illustrative and never present them as optimization advice.
+- Show the read-only Social Security claiming-age comparison for ages 62-70, retirement milestones, and portfolio composition snapshots at planning milestones. Keep real estate separate from spendable financial assets.
+- Render one detail row per age. Support isolated overrides for return, working-year income, retirement spending, and retired-year extra withdrawals. Blank fields fall back to the modeled value for that age.
+- Store overrides separately from the immutable sample data. Editing or clearing one age must not change any other age; global sample reset and Timeline reset must clear all overrides.
+- Recalculate the shared timeline engine after every valid override and propagate the result to Readiness, Recommendations, milestones, composition snapshots, and summary metrics without a page reload.
+- Apply the documented retirement withdrawal order and cash-reserve behavior. Do not create a second Timeline or retirement model for display-only calculations.
+- Keep invalid and non-applicable row inputs safe and understandable. Prevent `NaN`, broken rows, and misleading values; preserve keyboard access, visible focus, and mobile usability with a scrollable table region.
+
 ## Financial and Research Boundaries
 
-P0 uses the simplified rules above. Future tax-aware work should validate documented scenarios against the deterministic calculation model before implementing more detailed formulas.
+The current release uses the simplified rules above. Future tax-aware work should validate documented scenarios against the deterministic calculation model before implementing more detailed formulas.
 
-The prototype must clearly state that results are simplified educational estimates and not financial, tax, or legal advice.
+The application must clearly state that results are simplified educational estimates and not financial, tax, or legal advice.
 
 ## Definition Of Done
 
@@ -174,5 +189,5 @@ A change is complete only when:
 - No calculated output becomes stale, invalid, or `NaN`.
 - Real estate remains separate from investable retirement assets.
 - Recommendations explain why they appear.
-- Deferred workbook features are not represented with invented values; P0 tax-aware estimates remain explicitly simplified.
+- Future capabilities are not represented with invented values; tax-aware estimates remain explicitly simplified.
 - The README and relevant wireframe or PRD requirements remain accurate.

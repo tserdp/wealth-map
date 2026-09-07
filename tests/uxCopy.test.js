@@ -25,7 +25,7 @@ test("the Social Security claim-age migration notice is removed", () => {
   );
 });
 
-test("prototype-boundary and organizational notice panels are removed", () => {
+test("boundary and organizational notice panels are removed", () => {
   assert.ok(!indexHtml.includes("Prototype boundary"));
   assert.ok(!appJs.includes("Not modeled in prototype."));
 });
