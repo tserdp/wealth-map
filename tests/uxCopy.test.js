@@ -113,6 +113,76 @@ test("additional annual savings explains the brokerage and cash allocation", () 
   );
 });
 
+test("savings strategy has an accessible explanation of allocation choices", () => {
+  assert.ok(indexHtml.includes('aria-label="Savings Strategy"'));
+  assert.ok(indexHtml.includes('id="savings-strategy-help-button"'));
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="savings-strategy-help" aria-label="About Savings Strategy"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Controls how income is allocated toward retirement accounts, employer-sponsored plans, brokerage investments, and cash savings.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Changes made here directly affect retirement projections, readiness calculations, and long-term wealth accumulation.",
+    ),
+  );
+});
+
+test("after-tax income has an accessible planning-estimate tooltip", () => {
+  assert.ok(indexHtml.includes('id="after-tax-income-help-button"'));
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="after-tax-income-help" aria-label="About After-Tax Income"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Estimated income remaining after federal taxes, state taxes, and pre-tax retirement contributions.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "This amount is used to fund current expenses, Roth IRA contributions, and Additional Annual Savings.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "This is a planning estimate based on the tax assumptions configured in your plan.",
+    ),
+  );
+});
+
+test("additional annual savings KPI has an accessible explanation", () => {
+  assert.ok(
+    indexHtml.includes('id="additional-annual-savings-summary-help-button"'),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'aria-controls="additional-annual-savings-summary-help" aria-label="About Additional Annual Savings"',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Money remaining after estimated taxes, current expenses, and retirement account contributions.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "WealthMap allocates this amount between Brokerage and Cash based on your selected allocation percentages.",
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      "Additional Annual Savings represents non-retirement savings that remain available outside retirement accounts.",
+    ),
+  );
+});
+
 test("annual savings rate has an accessible explanatory tooltip", () => {
   assert.ok(indexHtml.includes('id="annual-savings-rate-help-button"'));
   assert.ok(
@@ -153,11 +223,10 @@ test("total retirement contributions has an accessible explanation of retirement
       "The total amount contributed each year to retirement accounts, including employee contributions and employer matching contributions.",
     ),
   );
-  assert.ok(
-    indexHtml.includes(
-      "This includes 401(k), Traditional IRA, Roth IRA, and Employer Match contributions.",
-    ),
-  );
+  assert.ok(indexHtml.includes("<li>401(k) Contributions</li>"));
+  assert.ok(indexHtml.includes("<li>Traditional IRA Contributions</li>"));
+  assert.ok(indexHtml.includes("<li>Roth IRA Contributions</li>"));
+  assert.ok(indexHtml.includes("<li>Employer Match</li>"));
   assert.ok(
     indexHtml.includes(
       "These contributions are intended to support your long-term retirement goals.",
