@@ -235,18 +235,25 @@
               <div><span class="eyebrow">THE ENGINE OF THE PLAN</span><h2 id="cashflow-heading">Income &amp; Expenses</h2><p>See what your current earnings and spending make possible.</p></div>
             </div>
             <div class="cashflow-layout">
-              <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></div><div class="form-grid" id="income-fields"></div></section>
-              <section class="panel form-panel" aria-label="Expenses"><div class="section-heading"><div><span class="panel-label">Expenses</span><p>Plan inputs that determine the annual surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></section>
+              <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Income</span><button class="info-button metric-help-button" id="income-help-button" type="button" data-help-target="income-help" aria-expanded="false" aria-controls="income-help" aria-label="About Income">i</button><div class="metric-help" id="income-help" role="tooltip" data-help-button-id="income-help-button" hidden><strong>Income</strong><p>Annual income used for retirement planning calculations, including salary and any additional recurring income.</p></div></div></div><div class="form-grid" id="income-fields"></div></section>
+              <section class="panel form-panel" aria-label="Expenses"><div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Expenses</span><button class="info-button metric-help-button" id="expenses-help-button" type="button" data-help-target="expenses-help" aria-expanded="false" aria-controls="expenses-help" aria-label="About Expenses">i</button><div class="metric-help" id="expenses-help" role="tooltip" data-help-button-id="expenses-help-button" hidden><strong>Expenses</strong><p>Current and retirement spending assumptions used throughout readiness, savings, and retirement projections.</p></div></div></div><div class="form-grid" id="expense-fields"></div></section>
             </div>
             <section class="panel form-panel" aria-label="Contribution rates">
-              <div class="section-heading"><div><span class="panel-label">Contribution rates</span><p>Employer match = employee 401(k) contribution × match rate, capped at the selected percentage of salary.</p></div></div>
+              <div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Contribution rates</span><button class="info-button metric-help-button" id="contribution-rates-help-button" type="button" data-help-target="contribution-rates-help" aria-expanded="false" aria-controls="contribution-rates-help" aria-label="About Contribution Rates">i</button><div class="metric-help" id="contribution-rates-help" role="tooltip" data-help-button-id="contribution-rates-help-button" hidden><strong>Contribution Rates</strong><p>Controls annual retirement contributions, employer matching contributions, and how additional savings are allocated.</p><p>Employer matching contributions are based on your selected match rate and match cap.</p></div></div></div>
               <div class="contribution-group">
                 <h3 class="contribution-group-heading">Employer-sponsored</h3>
                 <div class="form-grid" id="contribution-fields-employer"></div>
               </div>
               <div class="contribution-group">
-                <h3 class="contribution-group-heading">IRA contributions</h3>
-                <p class="contribution-group-note">Enter a fixed annual dollar amount for each IRA. Traditional IRA contributions remain pre-tax; Roth IRA contributions remain after-tax.</p>
+                <div class="metric-label-row has-help">
+                  <h3 class="contribution-group-heading">IRA contributions</h3>
+                  <button class="info-button metric-help-button" id="ira-contributions-help-button" type="button" data-help-target="ira-contributions-help" aria-expanded="false" aria-controls="ira-contributions-help" aria-label="About IRA Contributions">i</button>
+                  <div class="metric-help" id="ira-contributions-help" role="tooltip" data-help-button-id="ira-contributions-help-button" hidden>
+                    <strong>IRA Contributions</strong>
+                    <p>Enter your planned annual IRA contributions.</p>
+                    <p>Traditional IRA contributions are modeled as pre-tax savings. Roth IRA contributions are modeled as after-tax savings.</p>
+                  </div>
+                </div>
                 <div class="form-grid" id="contribution-fields-ira"></div>
               </div>
               <div class="contribution-group">
@@ -258,7 +265,7 @@
                       <p>Money remaining after estimated taxes, current expenses, and retirement account contributions. WealthMap allocates this amount between Brokerage and Cash based on your selected percentages.</p>
                     </div>
                   </div>
-                  <p class="contribution-group-note">Additional Annual Savings (<strong id="available-annual-savings">$0</strong>) is allocated between Brokerage Contribution <strong id="brokerage-contribution-amount">$0</strong> and Cash Contribution <strong id="cash-contribution-amount">$0</strong>.</p>
+                  <p class="contribution-group-note additional-savings-summary"><span>Additional Annual Savings: <strong id="available-annual-savings">$0</strong></span><span>Brokerage: <strong id="brokerage-contribution-amount">$0</strong> • Cash: <strong id="cash-contribution-amount">$0</strong></span></p>
                 <div class="form-grid" id="contribution-fields-additional"></div>
               </div>
             </section>

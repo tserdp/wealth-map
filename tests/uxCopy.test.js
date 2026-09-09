@@ -92,7 +92,12 @@ test("additional annual savings explains the brokerage and cash allocation", () 
   );
   assert.ok(
     indexHtml.includes(
-      'Additional Annual Savings (<strong id="available-annual-savings">$0</strong>) is allocated between Brokerage Contribution',
+      'Additional Annual Savings: <strong id="available-annual-savings">$0</strong>',
+    ),
+  );
+  assert.ok(
+    indexHtml.includes(
+      'Brokerage: <strong id="brokerage-contribution-amount">$0</strong>',
     ),
   );
   assert.ok(appJs.includes('"% of Additional Annual Savings"'));

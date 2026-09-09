@@ -15,7 +15,6 @@ var __wealthMap = {
   calculate: calculate,
   calculateContributions: calculateContributions,
   migrateLegacyIraContributions: migrateLegacyIraContributions,
-  iraContributionLimit: iraContributionLimit,
   cloneSampleProfile: cloneSampleProfile,
 };`;
   const sandbox = { console, Math, Number, Intl, Object, Array, JSON, Date };
@@ -30,7 +29,6 @@ const {
   calculate,
   calculateContributions,
   migrateLegacyIraContributions,
-  iraContributionLimit,
   cloneSampleProfile,
 } = loadModel();
 
@@ -233,8 +231,15 @@ test("a profile already using annual IRA contribution amounts is left unchanged 
   assert.equal(migrated.iraContributions.rothIraAnnual, 7000);
 });
 
-test("current IRS max helper returns the under-50 and catch-up limits", () => {
-  assert.equal(iraContributionLimit(45), 7000);
-  assert.equal(iraContributionLimit(50), 8000);
-  assert.equal(iraContributionLimit(65), 8000);
+test("IRA contribution inputs have no IRS maximum shortcut UI or supporting logic", () => {
+  const appSource = fs.readFileSync(path.join(__dirname, "../app.js"), "utf8");
+  const stylesheet = fs.readFileSync(
+    path.join(__dirname, "../styles.css"),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    appSource,
+    /Use current IRS max|iraContributionLimit|data-max-field/,
+  );
+  assert.doesNotMatch(stylesheet, /field-max-button/);
 });

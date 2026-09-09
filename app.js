@@ -181,18 +181,6 @@ function contributionRate(profile, key) {
   return Math.min(1, Math.max(0, numberValue(profile.contributionRates[key])));
 }
 
-// Current illustrative IRS annual IRA contribution limits, used only by the optional "Use IRS
-// max" convenience shortcut; they populate the annual contribution fields rather than driving
-// any separate contribution logic.
-const IRA_CONTRIBUTION_LIMIT_UNDER_50 = 7000;
-const IRA_CONTRIBUTION_LIMIT_50_PLUS = 8000;
-
-function iraContributionLimit(age) {
-  return numberValue(age) >= 50
-    ? IRA_CONTRIBUTION_LIMIT_50_PLUS
-    : IRA_CONTRIBUTION_LIMIT_UNDER_50;
-}
-
 function iraContributionAmount(profile, key) {
   const source = profile.iraContributions;
   return Math.max(0, numberValue(source ? source[key] : 0));
@@ -1469,8 +1457,6 @@ function inputConfig() {
         "currency",
         "per year, pre-tax",
         3000,
-        undefined,
-        "traditional",
       ],
       [
         "iraContributions.rothIraAnnual",
@@ -1478,8 +1464,6 @@ function inputConfig() {
         "currency",
         "per year, after-tax",
         6000,
-        undefined,
-        "roth",
       ],
     ],
     contributionsAdditional: [
@@ -1575,7 +1559,7 @@ const PLAN_SETUP_FIELD_HELP = {
 };
 
 function createField(config) {
-  const [key, label, type, unit, fallback, options, iraMaxKind] = config;
+  const [key, label, type, unit, fallback, options] = config;
   const value = key
     .split(".")
     .reduce((currentValue, path) => currentValue?.[path], workingProfile);
@@ -1668,15 +1652,6 @@ function createField(config) {
   const unitEl = document.createElement("small");
   unitEl.textContent = unit || "Edit to recalculate";
   wrapper.append(labelRow, control, unitEl, messageEl);
-  if (iraMaxKind) {
-    const limit = iraContributionLimit(workingProfile.currentAge);
-    const maxButton = document.createElement("button");
-    maxButton.type = "button";
-    maxButton.className = "button button-quiet field-max-button";
-    maxButton.dataset.maxField = key;
-    maxButton.textContent = `Use current IRS max (${money(limit)})`;
-    wrapper.append(maxButton);
-  }
 
   if (key === "socialSecurityEstimatedBenefit") {
     const isAuto =
@@ -1715,16 +1690,6 @@ function updateSocialSecurityBenefitFieldVisibility() {
     manualWrapper.hidden = isAuto;
     manualWrapper.style.display = isAuto ? "none" : "";
   }
-}
-
-function handleMaxContributionClick(event) {
-  const button = event.target.closest("[data-max-field]");
-  if (!button) return;
-  const field = button.dataset.maxField;
-  const limit = iraContributionLimit(workingProfile.currentAge);
-  const input = document.querySelector(`[data-field="${field}"]`);
-  if (input) input.value = limit;
-  updateWorkingValue(field, String(limit), "currency");
 }
 
 function fieldValidationMessage(field, state) {
@@ -2612,7 +2577,6 @@ function init() {
     item.addEventListener("click", () => showPage(item.dataset.page)),
   );
   $("#reset-button").addEventListener("click", resetSample);
-  document.addEventListener("click", handleMaxContributionClick);
   $("#advanced-tax-toggle").addEventListener(
     "click",
     toggleAdvancedTaxSettings,
