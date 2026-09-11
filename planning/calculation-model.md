@@ -17,19 +17,32 @@ The retirement spending goal is not inflated again. The prototype does not offer
 ```text
 gross annual income = annual salary + other annual income
 employee 401(k) contribution = annual salary * employee 401(k) rate
-Traditional IRA contribution = gross annual income * Traditional IRA rate
+Traditional IRA contribution = fixed editable annual dollar amount (not a percentage of income)
 taxable income before standard deduction = max(0, gross annual income - employee pre-tax contributions)
 current federal tax = simplified progressive brackets(taxable income before standard deduction)
 current state tax = taxable income before standard deduction * state income tax rate
 income available after taxes = taxable income before standard deduction - federal tax - state tax
-Roth, brokerage, and cash contributions = their rates * income available after taxes
+Roth IRA contribution = fixed editable annual dollar amount (not a percentage of income)
+available annual savings = max(0, income available after taxes - Roth IRA contribution - current annual expenses)
+brokerage contribution = brokerage allocation % * available annual savings
+cash contribution = cash allocation % * available annual savings
 employee savings = all employee account contributions
 employer 401(k) match = min(employee 401(k) contribution * match rate, annual salary * match cap)
-after-tax annual surplus = income available after taxes - post-tax contributions - current annual expenses
+after-tax annual surplus = income available after taxes - Roth IRA, brokerage, and cash contributions - current annual expenses
 savings rate = employee savings / gross annual income
 ```
 
-Employee pre-tax contributions reduce the simplified tax base. Employer match is not employee income or cash spending: it does not reduce take-home pay, annual surplus, or the savings-rate denominator. It is shown separately and added to projected 401(k) assets. Federal brackets and state tax are illustrative only; payroll taxes, credits, deductions beyond the standard deduction, and local taxes are not modeled.
+Traditional IRA and Roth IRA contributions are entered as fixed annual dollar amounts rather than percentages of income; this better matches how users plan IRA funding (for example, "$7,000 per year") and avoids unrealistic contribution levels that a percentage of income could otherwise produce. Traditional IRA keeps its pre-tax treatment: its annual amount reduces the simplified tax base exactly like the employee 401(k) contribution. Roth IRA keeps its after-tax treatment: its annual amount does not change taxable income and is instead subtracted from income available after taxes to help determine available annual savings. Employee pre-tax contributions reduce the simplified tax base. Employer match is not employee income or cash spending: it does not reduce take-home pay, annual surplus, or the savings-rate denominator. It is shown separately and added to projected 401(k) assets. Federal brackets and state tax are illustrative only; payroll taxes, credits, deductions beyond the standard deduction, and local taxes are not modeled.
+
+Brokerage and Cash are allocations of available annual savings, not separate percentages of after-tax income. Available annual savings is after-tax income minus current annual expenses minus the Roth IRA contribution, floored at zero so it can never go negative. `Brokerage Allocation %` and `Cash Allocation %` split that pool and must total 100%; Plan Setup validation blocks any combination that does not. Because they only divide an already-nonnegative pool, Brokerage and Cash contributions can never create additional negative cash flow. Savings rate, employee savings, total retirement contributions, the Retirement Health Score, projected assets, the funding gap, the Wealth Timeline, and portfolio sustainability all consume the resulting dollar amounts.
+
+### Legacy percentage-based IRA contributions
+
+Profiles created before this model change may still carry the legacy `contributionRates.traditionalIra` and `contributionRates.rothIra` percentages. Before any calculation runs, the model migrates such a profile automatically: it replays the original percentage-based formulas above (Traditional IRA rate against gross annual income; Roth IRA rate against income available after taxes and pre-tax contributions) to reconstruct the approximate dollar amount the user intended, rounds each to the nearest dollar, stores them as the new annual IRA contribution amounts, and removes the legacy percentage fields. The migration is a one-time, best-effort conversion that preserves the user's original savings intent; it is not re-applied once a profile carries annual IRA contribution amounts.
+
+### Legacy percentage-of-income Brokerage/Cash contribution rates
+
+Profiles created before this model change may still carry the legacy `contributionRates.brokerage` and `contributionRates.cash` percentages, which were applied directly against after-tax income. Before any calculation runs, the model migrates such a profile automatically: it converts the legacy percentages into an equivalent `savingsAllocation.brokerage`/`savingsAllocation.cash` split that preserves their relative proportion (for example, legacy rates of 6% and 2% become a 75%/25% allocation split), and removes the legacy percentage fields. The migration is a one-time, best-effort conversion; it is not re-applied once a profile carries a savings allocation split.
 
 ## Assets and projection
 
@@ -40,7 +53,7 @@ total assets = financial assets + real estate
 
 Real estate is excluded from the retirement portfolio projection and required-retirement-assets calculation.
 
-Each contribution rate calculates an annual dollar contribution for its matching bucket. In each projection year, brokerage, pre-tax accounts, and Roth accounts grow at the real return. Cash does not receive an investment return. Calculated contributions are added at year end to their matching account. Employee and employer 401(k) contributions are both added to the pre-tax 401(k) balance.
+Each contribution rate or fixed annual IRA amount calculates an annual dollar contribution for its matching bucket. In each projection year, brokerage, pre-tax accounts, and Roth accounts grow at the real return. Cash does not receive an investment return. Calculated contributions are added at year end to their matching account, including the fixed Traditional IRA and Roth IRA annual amounts, which are added to the pre-tax and Roth balances respectively every year and participate in the same investment growth as the rest of the account. Employee and employer 401(k) contributions are both added to the pre-tax 401(k) balance.
 
 Brokerage gains are taxed once per year instead of compounding pre-tax:
 
@@ -129,9 +142,20 @@ The Timeline presents composition directly within the retirement workbench, not 
 
 These snapshots help users compare the account sources available for withdrawal sequencing and liquidity planning. A tax-deferred majority signals potential taxable-income exposure; the first RMD snapshot identifies when mandatory distributions begin; the Roth share shows tax-free flexibility; and the cash share shows the modeled short-term reserve. The same annual rows continue to provide RMD, IRMAA, withdrawal, and ending-asset detail, so composition remains connected to retirement sustainability and updates whenever assumptions or timeline overrides change.
 
-## Social Security claiming-age comparison
+## Social Security benefit modes, claim age, and claiming-age comparison
 
-The Profile view shows an illustrative, read-only comparison of the annual Social Security benefit at claiming ages 62 through 70, treating the entered benefit as the full-retirement-age (67) amount. Early claims reduce the benefit 5/9% per month for the first 36 months early and 5/12% per month beyond that; delayed claims add 2/3% per month (8% per year) after age 67. This is a single-filer estimate; spousal benefits, actual full-retirement-age variation by birth year, and claiming optimization are not modeled.
+Social Security planning separates the baseline Full Retirement Age (67) benefit calculation from the claiming age decision:
+
+1. **Benefit mode:** On Plan Setup, users can choose between _Automatically estimate_ (the default for new plans) and _Enter manually_.
+   - In automatic mode, `estimatedSocialSecurityFraBenefit(profile)` estimates the baseline annual benefit at Full Retirement Age (67) from salary (`Math.max(0, Math.round((salary * 0.35) / 500) * 500)`). The estimate updates live as income changes and is shown read-only with contextual help.
+   - In manual mode, users provide their own annual Full Retirement Age benefit from their Social Security statement.
+   - Legacy profiles with existing meaningful (>0) benefits preserve their manual value; legacy profiles with $0 or missing benefit migrate to automatic estimation.
+2. **Claim age:** The Social Security claim age (62-70, default 67) adjusts the Full Retirement Age benefit: `benefitForClaimAge(fraBenefit, claimAge)` reduces the benefit 5/9% per month for the first 36 months claimed early and 5/12% per month beyond that, and adds 2/3% per month (8% per year) for each month claimed after 67. The Timeline, retirement readiness, and tax calculations always use this claim-age-adjusted benefit, never the raw Full Retirement Age amount.
+3. **Claiming strategy:** `resolveSocialSecurityPlan()` resolves the concrete benefit mode and claim age once per calculation: the "manual" claim strategy (the default) uses the Plan Setup claim age directly; the "auto" strategy, selectable on the Timeline page, searches claim ages 62-70 with the shared timeline engine for the age that keeps the plan solvent longest. `resolveEffectiveProfile()` then substitutes the resolved claim age and adjusted benefit into the profile used by every downstream calculation, so the Timeline, Readiness page, and Recommendations share one concrete assumption.
+
+In the year-by-year timeline, Social Security income, its taxation, and its offset to required retirement withdrawals are all zero for retired ages before the claim age, and all active at and after it — there is no partial-year proration. A saved profile without a `socialSecurityClaimAge` value falls back to 67 automatically.
+
+The Timeline also shows an illustrative, read-only comparison of the annual Social Security benefit at claiming ages 62 through 70, using the same `benefitForClaimAge` formula and treating the resolved Full Retirement Age benefit as the baseline. Early claims reduce the benefit 5/9% per month for the first 36 months early and 5/12% per month beyond that; delayed claims add 2/3% per month (8% per year) after age 67. This is a single-filer estimate; spousal benefits, actual full-retirement-age variation by birth year, and claiming optimization are not modeled. A "Social Security begins" milestone on the Timeline page displays the selected claim age whenever a nonzero benefit is modeled.
 
 ## Recommendation rules
 

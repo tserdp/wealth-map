@@ -3,16 +3,26 @@ const SAMPLE_PROFILE = Object.freeze({
   currentAge: 45,
   targetRetirementAge: 65,
   lifeExpectancy: 90,
-  state: "Colorado",
+  state: "Florida",
   filingStatus: "Married filing jointly",
   annualSalary: 150000,
   otherAnnualIncome: 0,
   contributionRates: Object.freeze({
     fourOhOneK: 0.1,
-    traditionalIra: 0.02,
-    rothIra: 0.06,
-    brokerage: 0.06,
-    cash: 0.02,
+  }),
+  // Fixed annual dollar IRA contributions (replaces legacy percentage-based contributionRates
+  // traditionalIra/rothIra fields; legacy profiles are migrated automatically at calculation time).
+  iraContributions: Object.freeze({
+    traditionalIraAnnual: 3000,
+    rothIraAnnual: 6000,
+  }),
+  // Splits Available Annual Savings (after-tax income minus current expenses minus Roth IRA
+  // contribution) between a taxable brokerage account and cash; must total 100%. Replaces legacy
+  // contributionRates.brokerage/cash percentages, which were applied against after-tax income
+  // directly rather than against leftover available savings.
+  savingsAllocation: Object.freeze({
+    brokerage: 0.75,
+    cash: 0.25,
   }),
   employerMatch: Object.freeze({
     rate: 0.5,
@@ -25,14 +35,20 @@ const SAMPLE_PROFILE = Object.freeze({
   projectionBasis: "real_dollars",
   safeWithdrawalRate: 0.04,
   federalStandardDeduction: 30000,
-  stateIncomeTaxRate: 0.044,
+  // Florida has no state income tax; users in a taxed state can edit this to their own rate.
+  stateIncomeTaxRate: 0,
   taxableGainsTaxRate: 0.15,
   preTaxWithdrawalTaxRate: 0.22,
   // "auto" lets the model generate a recommended strategy; "manual" uses the fields below.
   rothConversionStrategy: "auto",
   rothConversionAnnualAmount: 0,
-  socialSecurityStrategy: "auto",
+  // "manual" uses the Plan Setup Social Security Claim Age field directly; "auto" (selectable on
+  // the Timeline page) instead searches for a model-recommended claiming age.
+  socialSecurityStrategy: "manual",
+  // "auto" automatically estimates the FRA benefit from current earnings; "manual" allows manual entry.
+  socialSecurityBenefitMode: "auto",
   socialSecurityAnnualBenefit: 0,
+  // Full Retirement Age (67) is the default claim age; supported range is 62-70.
   socialSecurityClaimAge: 67,
   socialSecurityTaxablePercent: 0.85,
   rmdStartAge: 73,
@@ -92,6 +108,8 @@ function cloneSampleProfile() {
     ...SAMPLE_PROFILE,
     assets: { ...SAMPLE_PROFILE.assets },
     contributionRates: { ...SAMPLE_PROFILE.contributionRates },
+    iraContributions: { ...SAMPLE_PROFILE.iraContributions },
+    savingsAllocation: { ...SAMPLE_PROFILE.savingsAllocation },
     employerMatch: { ...SAMPLE_PROFILE.employerMatch },
     timelineOverrides: {},
   };

@@ -11,7 +11,7 @@
 | Current age                 [ 45        ] years                               |
 | Target retirement age       [ 65        ] years                               |
 | Life expectancy             [ 90        ] years                               |
-| State                       [ Colorado v ]                                    |
+| State                       [ Florida v ]                                     |
 | Tax filing status           [ Married filing jointly v ]                      |
 |                                                                                |
 | PROJECTION ASSUMPTIONS                                                         |
@@ -29,3 +29,7 @@
 - All displayed planning fields are editable.
 - Changes update the shared working state and all dependent pages.
 - Invalid ages or percentages show validation feedback.
+
+## Implementation note
+
+The shipped Plan Setup page also includes a "Tax and retirement settings" section with State, Tax filing status, Social Security benefit mode (Automatically estimate by default, or Enter manually), Social Security Full Retirement Age benefit (read-only estimate in auto mode, editable in manual mode), and Social Security claim age (62-70, default 67) always visible, plus a collapsible "Advanced Tax & Retirement Settings" section for less commonly changed assumptions. This wireframe predates that structure; see [wireframe-navigation.md](wireframe-navigation.md) and the shipped `index.html` for the current layout.

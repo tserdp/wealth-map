@@ -21,7 +21,7 @@
         </div>
         <nav class="primary-nav" aria-label="Main pages">
           <button class="nav-item active" type="button" data-page="readiness"><span>01</span>Readiness</button>
-          <button class="nav-item" type="button" data-page="profile"><span>02</span>Profile</button>
+          <button class="nav-item" type="button" data-page="profile"><span>02</span>Plan Setup</button>
           <button class="nav-item" type="button" data-page="assets"><span>03</span>Assets</button>
           <button class="nav-item" type="button" data-page="cashflow"><span>04</span>Income &amp; Expenses</button>
           <button class="nav-item" type="button" data-page="timeline"><span>05</span>Timeline</button>
@@ -33,7 +33,7 @@
             <strong id="sidebar-name">Alex Morgan</strong>
             <span id="sidebar-timeline">Age 45 → Retire 65</span>
           </div>
-          <p class="sidebar-note"><span aria-hidden="true">i</span> Educational estimate only</p>
+          <p class="sidebar-note"><span aria-hidden="true">i</span> Sample plan</p>
         </div>
       </aside>
 
@@ -110,7 +110,7 @@
                 <div class="driver-list">
                   <span><b>01</b> Investable assets</span><span><b>02</b> Annual savings</span><span><b>03</b> Expected return</span><span><b>04</b> Spending goal</span><span><b>05</b> Retirement timing</span>
                 </div>
-                <p class="assumption-note">Real-dollar projection with end-of-year contributions. Tax values are simplified estimates, not official tax calculations.</p>
+                <p class="assumption-note">Real-dollar projection with end-of-year contributions.</p>
               </article>
             </div>
             <article class="panel tax-summary-card">
@@ -152,14 +152,15 @@
                   </div>
                 </div>
               </div>
-              <p class="tax-summary-note">Uses simplified progressive federal brackets, state rate, taxable-gains and net investment income tax (NIIT) rates, pre-tax withdrawal tax, Roth conversion tax, Social Security taxability, an IRS Uniform Lifetime Table RMD estimate, and IRMAA thresholds. All figures are illustrative estimates, not tax advice.</p>
+              <p class="tax-summary-note">Based on the tax assumptions configured in your plan.</p>
             </article>
           </section>
 
           <section class="page-view" data-view="profile" aria-labelledby="profile-heading" hidden>
             <div class="page-intro">
-              <div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your profile</h2><p>Set the assumptions that shape every projection.</p></div>
+              <div><span class="eyebrow">PLAN FOUNDATION</span><h2 id="profile-heading">Your plan setup</h2><p>Set the assumptions that shape every projection, from taxes and income to retirement timing and contributions.</p></div>
             </div>
+            <div class="validation-standby" id="plan-setup-validation-note" hidden>Projections are paused until required plan inputs are valid.</div>
             <section class="form-panel panel" aria-label="Personal details">
               <div class="section-heading"><div><span class="panel-label">Personal details</span><p>These values travel with your working plan.</p></div></div>
               <div class="form-grid" id="profile-fields"></div>
@@ -168,26 +169,67 @@
               <div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></div>
               <div class="form-grid" id="assumption-fields"></div>
             </section>
-            <section class="form-panel panel" aria-label="Tax and retirement income assumptions">
-              <div class="section-heading"><div><span class="panel-label">Tax and retirement-income assumptions</span><p>Illustrative inputs used by the lightweight tax estimate.</p></div></div>
-              <div class="form-grid" id="tax-fields"></div>
+            <section class="form-panel panel" aria-label="Tax and retirement settings">
+              <div class="section-heading"><div><span class="panel-label">Tax and retirement settings</span><p>Core planning inputs for tax filing status, location, and Social Security.</p></div></div>
+              <div class="form-grid" id="basic-tax-fields"></div>
+              <p class="panel-supporting-text">Your Social Security benefit is assumed to be the Full Retirement Age (67) benefit. Claiming earlier reduces benefits; claiming later increases benefits.</p>
             </section>
-            <section class="notice-panel"><strong>Social Security and Roth conversion strategy moved</strong><p>The model now generates a recommended Social Security claiming age and Roth conversion plan automatically. Review and override both on the Timeline page.</p></section>
+            <section class="form-panel panel collapsible-panel" aria-label="Advanced tax and retirement settings">
+              <button type="button" class="collapsible-button" id="advanced-tax-toggle" aria-expanded="false" aria-controls="advanced-tax-content">
+                <span class="collapsible-header">
+                  <span class="collapsible-icon" aria-hidden="true">▶</span>
+                  <strong>Advanced Tax &amp; Retirement Settings</strong>
+                </span>
+              </button>
+              <div class="collapsible-content" id="advanced-tax-content" hidden>
+                <div class="collapsible-intro">
+                  <p>Most users can leave these settings at their defaults.</p>
+                </div>
+                <div class="form-grid" id="advanced-tax-fields"></div>
+              </div>
+            </section>
           </section>
 
           <section class="page-view" data-view="assets" aria-labelledby="assets-heading" hidden>
             <div class="page-intro">
               <div><span class="eyebrow">WHERE YOUR MONEY LIVES</span><h2 id="assets-heading">Assets</h2><p>Balances grouped by account type and simplified tax treatment.</p></div>
             </div>
-            <section class="panel table-panel" aria-label="Investable assets">
-              <div class="table-header"><div><span class="panel-label">Investable assets</span><p>Real estate is shown separately from the retirement portfolio.</p></div><strong id="financial-assets-total">$0</strong></div>
-              <div id="asset-fields"></div>
-              <div class="table-footer"><span>Financial assets total</span><strong id="financial-assets-total-bottom">$0</strong></div>
+            <section class="panel asset-summary" aria-labelledby="asset-summary-heading">
+              <span class="panel-label" id="asset-summary-heading">Asset summary</span>
+              <div class="asset-summary-grid">
+                <div>
+                  <span>Financial Assets</span>
+                  <strong id="financial-assets-summary">$0</strong>
+                </div>
+                <div>
+                  <span>Total Assets</span>
+                  <strong id="total-assets-summary">$0</strong>
+                </div>
+              </div>
             </section>
-            <section class="panel real-estate-panel" aria-label="Other assets">
-              <div><span class="panel-label">Other assets</span><p>Not automatically treated as spendable portfolio assets.</p></div>
-              <div class="inline-field"><label for="realEstate">Real estate</label><input id="realEstate" data-field="assets.realEstate" type="number" min="0" step="1000" inputmode="decimal" /><span>USD</span></div>
-              <div class="comparison"><span>Total assets</span><strong id="total-assets">$0</strong></div>
+            <section class="panel table-panel" aria-label="Investable assets">
+              <div class="table-header"><div><span class="panel-label">Investable assets</span><p>Accounts used in your retirement projection.</p></div><strong id="financial-assets-total">$0</strong></div>
+              <div id="asset-fields"></div>
+            </section>
+            <section class="panel table-panel other-assets-panel" aria-label="Other assets">
+              <div class="table-header">
+                <div>
+                  <span class="panel-label">Other assets</span>
+                  <p>Real estate is shown separately from the retirement portfolio.</p>
+                </div>
+                <div class="metric-label-row has-help">
+                  <button class="info-button metric-help-button" id="other-assets-help-button" type="button" data-help-target="other-assets-help" aria-expanded="false" aria-controls="other-assets-help" aria-label="About Other Assets">i</button>
+                  <div class="metric-help" id="other-assets-help" role="tooltip" data-help-button-id="other-assets-help-button" hidden>
+                    <strong>Other Assets</strong>
+                    <p>Assets included in total assets but not currently modeled as retirement income or available funds within WealthMap projections.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <div class="asset-label"><label for="realEstate">Real estate</label><small>Included in total assets, not the retirement projection</small></div>
+                <span class="tax-tag">Separate asset</span>
+                <input id="realEstate" data-field="assets.realEstate" type="number" min="0" step="1000" inputmode="decimal" aria-label="Real estate balance in USD" />
+              </div>
             </section>
           </section>
 
@@ -201,7 +243,20 @@
             </div>
             <section class="panel form-panel" aria-label="Contribution rates">
               <div class="section-heading"><div><span class="panel-label">Contribution rates</span><p>Employer match = employee 401(k) contribution × match rate, capped at the selected percentage of salary.</p></div></div>
-              <div class="form-grid" id="contribution-fields"></div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">Employer-sponsored</h3>
+                <div class="form-grid" id="contribution-fields-employer"></div>
+              </div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">IRA contributions</h3>
+                <p class="contribution-group-note">Enter a fixed annual dollar amount for each IRA. Traditional IRA contributions remain pre-tax; Roth IRA contributions remain after-tax.</p>
+                <div class="form-grid" id="contribution-fields-ira"></div>
+              </div>
+              <div class="contribution-group">
+                <h3 class="contribution-group-heading">Available savings allocation</h3>
+                <p class="contribution-group-note">Splits Available Annual Savings (<strong id="available-annual-savings">$0</strong> after taxes, current expenses, and the Roth IRA contribution) between a taxable brokerage account and cash: Brokerage <strong id="brokerage-contribution-amount">$0</strong> · Cash <strong id="cash-contribution-amount">$0</strong>.</p>
+                <div class="form-grid" id="contribution-fields-additional"></div>
+              </div>
             </section>
             <div class="summary-strip">
               <div><span>Gross annual income</span><strong id="total-income">$0</strong></div>
@@ -225,7 +280,7 @@
             </div>
             <section class="panel timeline-strategy-panel" aria-label="Model-generated retirement strategy">
               <div class="panel-label">Model-generated retirement strategy</div>
-              <p class="panel-supporting-text">The model automatically generates a recommended Social Security claiming age, a Roth conversion plan, and a suggested funding sequence from your profile, assets, income, and expenses. Switch a strategy to Manual if you want to set your own values below; the same retirement engine still drives every projection.</p>
+              <p class="panel-supporting-text">Uses your Plan Setup claim age and a model-generated Roth conversion plan by default. Switch either strategy below to compare an alternative.</p>
               <div id="strategy-summary" class="strategy-summary"></div>
               <div class="form-grid" id="strategy-fields"></div>
             </section>
@@ -251,6 +306,7 @@
               <div class="panel-label">Year-by-year detail</div>
               <p class="panel-supporting-text">Working-year contribution totals can be expanded to review each account category. Employer match is included in account contributions but is not household cash flow.</p>
               <p class="panel-supporting-text">Net cash flow shows income and spending activity only; portfolio withdrawals and mandatory RMDs are shown separately. Withdrawal values are simplified educational estimates.</p>
+              <p class="panel-supporting-text">Income overrides apply during working years; spending and withdrawal overrides apply during retirement.</p>
               <div class="timeline-table-wrapper">
                 <table class="timeline-table">
                   <thead>
@@ -281,7 +337,6 @@
                 </table>
               </div>
             </section>
-            <section class="notice-panel"><strong>Prototype boundary</strong><p>Income and expense overrides apply only during the phase they affect (working years for income, retired years for spending and one-time withdrawals). RMD uses an illustrative IRS Uniform Lifetime Table, and brokerage growth includes a simplified NIIT surtax. Model-generated Social Security and Roth conversion strategies are illustrative, single-filer, non-optimized estimates, not claiming or tax optimization; account aggregation remains deferred.</p></section>
           </section>
 
           <section class="page-view" data-view="recommendations" aria-labelledby="recommendations-heading" hidden>
@@ -290,13 +345,13 @@
               <span class="status-pill" id="recommendation-count">0 actions</span>
             </div>
             <div class="recommendation-list" id="recommendation-list"></div>
-            <section class="notice-panel"><strong>Prototype boundary</strong><p>Tax, Roth conversion, Social Security, IRMAA, and RMD values are simplified educational estimates only. Full optimization remains outside this prototype.</p></section>
           </section>
         </div>
-        <footer class="app-footer">Wealth Map is an educational prototype. Results are simplified estimates, not financial, tax, or legal advice.</footer>
+        <footer class="app-footer">WealthMap is an educational retirement planning tool, not a tax, legal, or investment advisor. Consult qualified professionals before making important financial decisions.</footer>
       </main>
     </div>
-    <script src="./data.js?v=5"></script>
-    <script src="./app.js?v=11"></script>
+    <script src="./data.js?v=6"></script>
+    <script src="./validation.js?v=2"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>
