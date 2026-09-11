@@ -194,6 +194,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .timeline-table-wrapper { max-height: 560px; overflow: auto; margin-top: 14px; border: 1px solid var(--line); }
 .timeline-table { width: 100%; border-collapse: collapse; font: 12px Arial, sans-serif; white-space: nowrap; }
 .timeline-table thead th { position: sticky; top: 0; z-index: 1; background: #153e5c; color: white; padding: 10px 8px; text-align: left; font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .05em; }
+.timeline-table thead th .info-button { border-color: rgba(255,255,255,.75); color: white; background: rgba(255,255,255,.08); }
+.timeline-table thead th .info-button:hover, .timeline-table thead th .info-button:focus-visible { border-color: white; background: rgba(255,255,255,.2); color: white; }
+.timeline-table-help { white-space: normal; text-align: left; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .timeline-table td { padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: middle; }
 .timeline-table tr.has-override { background: var(--blue-soft); }
 .timeline-table input { width: 92px; border: 1px solid #8b8d8f; border-radius: 2px; padding: 6px 7px; font-size: 12px; }
@@ -201,6 +204,20 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .timeline-status { display: block; color: var(--ink-soft); font: 10px Arial, sans-serif; }
 .timeline-total { color: var(--blue); font-weight: 700; }
 .timeline-clear { padding: 6px 9px; font-size: 10px; }
+.contribution-details { min-width: 126px; }
+.contribution-details summary { cursor: pointer; color: var(--blue); font-weight: 700; list-style-position: inside; }
+.contribution-details summary:focus-visible { outline: 2px solid var(--coral); outline-offset: 3px; border-radius: 2px; }
+.contribution-total { color: var(--blue); font-weight: 700; }
+.contribution-breakdown { display: grid; gap: 5px; min-width: 190px; margin-top: 7px; padding: 8px; border: 1px solid var(--line); background: var(--surface); white-space: normal; }
+.contribution-breakdown span { display: flex; justify-content: space-between; gap: 12px; }
+.contribution-breakdown small { color: var(--ink-soft); font: 10px Arial, sans-serif; }
+.contribution-breakdown strong { font-size: 11px; }
+.withdrawal-details { display: grid; gap: 4px; min-width: 150px; }
+.withdrawal-details label { display: grid; gap: 3px; color: var(--ink-soft); font-size: 10px; }
+.withdrawal-details span { display: flex; justify-content: space-between; gap: 12px; }
+.withdrawal-details small { color: var(--ink-soft); font: 10px Arial, sans-serif; }
+.withdrawal-details strong { font-size: 11px; }
+.withdrawal-details .withdrawal-note { color: var(--coral); white-space: normal; }
 
 .ss-claiming-table { width: 100%; border-collapse: collapse; font: 12px Arial, sans-serif; margin-top: 14px; }
 .ss-claiming-table th { text-align: left; padding: 10px 8px; background: var(--paper); color: var(--ink-soft); font: 700 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .05em; }

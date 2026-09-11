@@ -637,17 +637,42 @@ function findExpectedRetirementAge(profile) {
   return null;
 }
 
+function timelineOverrideIsAllowed(profile, age, field) {
+  const startAge = Math.round(numberValue(profile.currentAge));
+  const endAge = Math.round(numberValue(profile.lifeExpectancy));
+  if (age < startAge || age > endAge) return false;
+  const isRetired = age >= numberValue(profile.targetRetirementAge);
+  if (field === "returnPercent" || field === "expenses") return true;
+  if (field === "income" || field === "extraCashNeed") return !isRetired;
+  if (field === "extraWithdrawal" || field === "withdrawal") return isRetired;
+  return false;
+}
+
 function timelineOverrideFor(profile, age) {
-  return (profile.timelineOverrides && profile.timelineOverrides[age]) || {};
+  const stored = (profile.timelineOverrides && profile.timelineOverrides[age]) || {};
+  return Object.fromEntries(
+    Object.entries(stored).filter(([field, value]) => {
+      const minimum = field === "returnPercent" ? -100 : 0;
+      return (
+        timelineOverrideIsAllowed(profile, age, field) &&
+        Number.isFinite(Number(value)) &&
+        Number(value) >= minimum
+      );
+    }),
+  );
 }
 
 function setTimelineOverride(age, field, rawValue) {
   const overrides = workingProfile.timelineOverrides;
-  const existing = overrides[age] ? { ...overrides[age] } : {};
+  if (!Number.isInteger(age) || !timelineOverrideIsAllowed(workingProfile, age, field)) return;
+  const existing = { ...timelineOverrideFor(workingProfile, age) };
   if (rawValue === "" || rawValue === null || rawValue === undefined) {
     delete existing[field];
   } else {
-    existing[field] = rawValue;
+    const value = Number(rawValue);
+    const minimum = field === "returnPercent" ? -100 : 0;
+    if (!Number.isFinite(value) || value < minimum) return;
+    existing[field] = value;
   }
   if (Object.keys(existing).length === 0) {
     delete overrides[age];
@@ -712,12 +737,23 @@ function buildTimelineRows(profile) {
     const defaultExpenses = isRetired
       ? profile.retirementAnnualSpendingGoal
       : profile.currentAnnualExpenses;
+    const expenses =
+      override.expenses != null
+        ? Math.max(0, numberValue(override.expenses))
+        : defaultExpenses;
+    const extraCashNeed = !isRetired
+      ? Math.max(0, numberValue(override.extraCashNeed))
+      : 0;
     const extraWithdrawal =
       override.extraWithdrawal != null
         ? Math.max(0, numberValue(override.extraWithdrawal))
         : 0;
+    const withdrawalOverride = isRetired && override.withdrawal != null
+      ? Math.max(0, numberValue(override.withdrawal))
+      : null;
 
     let contribution = 0;
+    let contributionDetails = null;
     let withdrawal = 0;
     let rmd = 0;
     let niit = 0;
@@ -729,6 +765,12 @@ function buildTimelineRows(profile) {
     let rowSocialSecurityGross = 0;
     let rowSpending = 0;
     let rowNetCashFlow = 0;
+    let rowPortfolioWithdrawal = 0;
+    let rowUnmetCashNeed = 0;
+    let rowUnmetSpendingNeed = 0;
+    let rowUnmetWithdrawalNeed = 0;
+    let rowRequestedWithdrawal = null;
+    let rowDiscretionaryRequestedWithdrawal = 0;
     let income = defaultIncome;
 
     if (!isRetired) {
@@ -737,6 +779,7 @@ function buildTimelineRows(profile) {
         salaryForYear,
         profile.otherAnnualIncome,
       );
+      contributionDetails = { ...contributions };
       const growth = applyBrokerageGrowth(
         profile,
         brokerage,
@@ -758,7 +801,7 @@ function buildTimelineRows(profile) {
       roth += contributions.rothIra;
       contribution =
         contributions.employeeSavings + contributions.employerFourOhOneKMatch;
-      rowSpending = defaultExpenses;
+      rowSpending = expenses + extraCashNeed;
 
       const conversion = recommendedRothConversionAmount(
         profile,
@@ -779,7 +822,42 @@ function buildTimelineRows(profile) {
         brokerage = Math.max(0, brokerage - taxOnConversion);
       }
       rowConversion = conversion;
-      rowNetCashFlow = income - defaultExpenses - contribution;
+      rowNetCashFlow =
+        contributions.afterTaxIncome -
+        contributions.employeePostTaxContributions -
+        expenses -
+        extraCashNeed;
+
+      const workingCashNeed = Math.max(
+        0,
+        expenses +
+          extraCashNeed +
+          contributions.employeePostTaxContributions -
+          contributions.afterTaxIncome,
+      );
+      let remainingWorkingNeed = workingCashNeed;
+      const fromCash = Math.min(cash, remainingWorkingNeed);
+      cash -= fromCash;
+      remainingWorkingNeed -= fromCash;
+      const fromBrokerage = Math.min(brokerage, remainingWorkingNeed);
+      brokerage -= fromBrokerage;
+      remainingWorkingNeed -= fromBrokerage;
+      const fromPreTax = Math.min(preTax, remainingWorkingNeed);
+      preTax -= fromPreTax;
+      remainingWorkingNeed -= fromPreTax;
+      const fromRoth = Math.min(roth, remainingWorkingNeed);
+      roth -= fromRoth;
+      remainingWorkingNeed -= fromRoth;
+      rowPortfolioWithdrawal =
+        fromCash + fromBrokerage + fromPreTax + fromRoth;
+      rowUnmetCashNeed = remainingWorkingNeed;
+      rowWithdrawalSources = {
+        cash: fromCash,
+        brokerage: fromBrokerage,
+        preTax: fromPreTax,
+        roth: fromRoth,
+        rmd: 0,
+      };
     } else {
       const ssActive = age >= numberValue(profile.socialSecurityClaimAge);
       const taxableSocialSecurity = ssActive
@@ -844,14 +922,19 @@ function buildTimelineRows(profile) {
       rowConversion = conversion;
       rowConversionTax = conversionTax;
 
-      const spendingGoal =
-        override.expenses != null
-          ? numberValue(override.expenses)
-          : profile.retirementAnnualSpendingGoal;
-      let remaining = Math.max(
+      const spendingGoal = expenses;
+      const naturalRemaining = Math.max(
         0,
         spendingGoal + extraWithdrawal + irmaa - netSocialSecurity - rmd,
       );
+      const requestedWithdrawal = withdrawalOverride ?? naturalRemaining + rmd;
+      const requestedDiscretionaryWithdrawal = Math.max(
+        0,
+        requestedWithdrawal - rmd,
+      );
+      let remaining = requestedDiscretionaryWithdrawal;
+      rowRequestedWithdrawal = requestedWithdrawal;
+      rowDiscretionaryRequestedWithdrawal = requestedDiscretionaryWithdrawal;
 
       const fromCash = Math.min(cash, remaining);
       cash -= fromCash;
@@ -871,8 +954,21 @@ function buildTimelineRows(profile) {
 
       const fromRoth = Math.min(roth, Math.max(0, remaining));
       roth -= fromRoth;
+      remaining = Math.max(0, remaining - fromRoth);
 
       withdrawal = fromCash + fromBrokerage + fromPreTaxGross + fromRoth + rmd;
+      const fundedDiscretionaryWithdrawal =
+        fromCash +
+        fromBrokerage +
+        fromPreTaxGross * (1 - profile.preTaxWithdrawalTaxRate) +
+        fromRoth;
+      rowPortfolioWithdrawal = withdrawal;
+      rowUnmetCashNeed = Math.max(0, remaining);
+      rowUnmetWithdrawalNeed = rowUnmetCashNeed;
+      rowUnmetSpendingNeed = Math.max(
+        0,
+        naturalRemaining - fundedDiscretionaryWithdrawal,
+      );
       rowIrmaa = irmaa;
       rowWithdrawalSources = {
         cash: fromCash,
@@ -884,8 +980,7 @@ function buildTimelineRows(profile) {
       rowSpending = spendingGoal + extraWithdrawal;
       rowNetCashFlow =
         netSocialSecurity +
-        withdrawal -
-        (spendingGoal + extraWithdrawal + irmaa) -
+        -(spendingGoal + extraWithdrawal + irmaa) -
         rowConversionTax;
 
       // Sequence-of-returns guard: refill the cash reserve from brokerage only in up years.
@@ -912,14 +1007,22 @@ function buildTimelineRows(profile) {
       defaultReturnPercent,
       income,
       defaultIncome,
-      expenses: isRetired
-        ? override.expenses != null
-          ? numberValue(override.expenses)
-          : defaultExpenses
-        : defaultExpenses,
+      expenses,
       defaultExpenses,
+      extraCashNeed,
+      extraWithdrawal,
       contribution,
+      contributionDetails,
       withdrawal,
+      actualWithdrawal: withdrawal,
+      withdrawalOverride,
+      mandatoryRmd: rmd,
+      requestedWithdrawal: rowRequestedWithdrawal,
+      discretionaryRequestedWithdrawal: rowDiscretionaryRequestedWithdrawal,
+      portfolioWithdrawal: rowPortfolioWithdrawal,
+      unmetCashNeed: rowUnmetCashNeed,
+      unmetSpendingNeed: rowUnmetSpendingNeed,
+      unmetWithdrawalNeed: rowUnmetWithdrawalNeed,
       rmd,
       niit,
       socialSecurityTax: rowSocialSecurityTax,
@@ -929,11 +1032,14 @@ function buildTimelineRows(profile) {
       rothConversionTax: rowConversionTax,
       withdrawalSources: rowWithdrawalSources,
       spending: rowSpending,
+      householdNetCashFlow: rowNetCashFlow,
       netCashFlow: rowNetCashFlow,
+      portfolioCashFlow: rowPortfolioWithdrawal,
       startTotal,
       startBalances,
       endBalances,
       endTotal,
+      endingAssets: endTotal,
       overrides: override,
       hasOverride: Object.keys(override).length > 0,
     });
@@ -1700,20 +1806,55 @@ function withdrawalSourceSummary(sources) {
   return parts.join(" • ");
 }
 
+function contributionDetailsMarkup(row) {
+  if (!row.contributionDetails) {
+    return `<span class="contribution-total">${money(row.contribution)}</span>`;
+  }
+  const details = row.contributionDetails;
+  return `<details class="contribution-details">
+    <summary aria-label="View contribution breakdown for age ${row.age}">${money(row.contribution)}</summary>
+    <div class="contribution-breakdown">
+      <span><small>Employee 401(k)</small><strong data-contribution-value="employeeFourOhOneK">${money(details.employeeFourOhOneK)}</strong></span>
+      <span><small>Employer 401(k) match</small><strong data-contribution-value="employerFourOhOneKMatch">${money(details.employerFourOhOneKMatch)}</strong></span>
+      <span><small>Traditional IRA</small><strong data-contribution-value="traditionalIra">${money(details.traditionalIra)}</strong></span>
+      <span><small>Roth IRA</small><strong data-contribution-value="rothIra">${money(details.rothIra)}</strong></span>
+      <span><small>Taxable brokerage</small><strong data-contribution-value="brokerage">${money(details.brokerage)}</strong></span>
+      <span><small>Cash reserve</small><strong data-contribution-value="cash">${money(details.cash)}</strong></span>
+    </div>
+  </details>`;
+}
+
+function withdrawalDetailsMarkup(row) {
+  if (!row.isRetired) return "—";
+  const rmdNote =
+    row.withdrawalOverride != null && row.mandatoryRmd > row.requestedWithdrawal
+      ? '<small class="withdrawal-note">Mandatory RMD exceeds request</small>'
+      : "";
+  return `<div class="withdrawal-details">
+    <label>Requested total${timelineInputCell(row.age, "withdrawal", row.withdrawalOverride, row.requestedWithdrawal ?? row.withdrawal, false, "currency")}</label>
+    <span><small>Mandatory RMD</small><strong data-col="mandatoryRmd">${money(row.mandatoryRmd)}</strong></span>
+    <span><small>Actual funded</small><strong data-col="withdrawalActual">${money(row.actualWithdrawal)}</strong></span>
+    <span><small>Unmet need</small><strong data-col="unmetWithdrawalNeed">${money(row.unmetWithdrawalNeed)}</strong></span>
+    ${rmdNote}
+  </div>`;
+}
+
 function timelineRowMarkup(row) {
   const override = row.overrides;
   const taxesTotal =
     row.niit + row.socialSecurityTax + row.irmaa + row.rothConversionTax;
+  const extraField = row.isRetired ? "extraWithdrawal" : "extraCashNeed";
+  const extraDefault = row.isRetired ? row.extraWithdrawal : row.extraCashNeed;
   return `<tr data-timeline-row="${row.age}" class="${row.hasOverride ? "has-override" : ""}">
     <td>${row.age}<span class="timeline-status">${row.isRetired ? "Retired" : "Working"}</span></td>
     <td>${timelineInputCell(row.age, "returnPercent", override.returnPercent, row.defaultReturnPercent, false, "percent")}</td>
     <td>${timelineInputCell(row.age, "income", override.income, row.isRetired ? row.income : row.defaultIncome, row.isRetired, "currency")}</td>
     <td data-col="socialSecurity">${row.socialSecurityGrossBenefit > 0 ? money(row.socialSecurityGrossBenefit) : "—"}</td>
     <td data-col="rothConversion" class="${row.rothConversion > 0 ? "model-generated" : ""}">${row.rothConversion > 0 ? money(row.rothConversion) : "—"}</td>
-    <td>${timelineInputCell(row.age, "expenses", override.expenses, row.defaultExpenses, !row.isRetired, "currency")}</td>
-    <td>${timelineInputCell(row.age, "extraWithdrawal", override.extraWithdrawal, 0, !row.isRetired, "currency")}</td>
-    <td data-col="contribution">${row.isRetired ? "—" : money(row.contribution)}</td>
-    <td data-col="withdrawal" title="${withdrawalSourceSummary(row.withdrawalSources)}">${row.isRetired ? money(row.withdrawal) : "—"}</td>
+    <td>${timelineInputCell(row.age, "expenses", override.expenses, row.defaultExpenses, false, "currency")}</td>
+    <td>${timelineInputCell(row.age, extraField, override[extraField], extraDefault, false, "currency")}</td>
+    <td data-col="contribution">${contributionDetailsMarkup(row)}</td>
+    <td data-col="withdrawal" title="${withdrawalSourceSummary(row.withdrawalSources)}">${withdrawalDetailsMarkup(row)}</td>
     <td data-col="rmd">${row.rmd > 0 ? money(row.rmd) : "—"}</td>
     <td data-col="taxes">${taxesTotal > 0 ? money(taxesTotal) : "—"}</td>
     <td data-col="netCashFlow">${money(row.netCashFlow)}</td>
@@ -1747,11 +1888,33 @@ function updateTimelineComputedCells(rows) {
     conversionCell.textContent =
       row.rothConversion > 0 ? money(row.rothConversion) : "—";
     conversionCell.classList.toggle("model-generated", row.rothConversion > 0);
-    tr.querySelector('[data-col="contribution"]').textContent = row.isRetired
-      ? "—"
-      : money(row.contribution);
+    const contributionCell = tr.querySelector('[data-col="contribution"]');
+    const contributionSummary = contributionCell?.querySelector("summary");
+    const contributionTotal = contributionCell?.querySelector(".contribution-total");
+    if (contributionSummary) {
+      contributionSummary.textContent = money(row.contribution);
+    } else if (contributionTotal) {
+      contributionTotal.textContent = money(row.contribution);
+    }
+    if (row.contributionDetails) {
+      contributionCell?.querySelectorAll("[data-contribution-value]").forEach((value) => {
+        const field = value.dataset.contributionValue;
+        value.textContent = money(row.contributionDetails[field]);
+      });
+    }
     const withdrawalCell = tr.querySelector('[data-col="withdrawal"]');
-    withdrawalCell.textContent = row.isRetired ? money(row.withdrawal) : "—";
+    const withdrawalActual = tr.querySelector('[data-col="withdrawalActual"]');
+    if (withdrawalActual) {
+      withdrawalActual.textContent = money(row.actualWithdrawal);
+      tr.querySelector('[data-col="mandatoryRmd"]').textContent = money(
+        row.mandatoryRmd,
+      );
+      tr.querySelector('[data-col="unmetWithdrawalNeed"]').textContent = money(
+        row.unmetWithdrawalNeed,
+      );
+    } else {
+      withdrawalCell.textContent = "—";
+    }
     withdrawalCell.title = withdrawalSourceSummary(row.withdrawalSources);
     tr.querySelector('[data-col="rmd"]').textContent =
       row.rmd > 0 ? money(row.rmd) : "—";
