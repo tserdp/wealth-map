@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Wealth Map retirement readiness prototype" />
+    <meta name="description" content="Wealth Map retirement readiness planning" />
     <title>Wealth Map | Retirement Readiness</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -166,7 +166,7 @@
               <div class="form-grid" id="profile-fields"></div>
             </section>
             <section class="form-panel panel" aria-label="Projection assumptions">
-              <div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for this prototype.</p></div></div>
+              <div class="section-heading"><div><span class="panel-label">Projection assumptions</span><p>Use transparent assumptions for your plan.</p></div></div>
               <div class="form-grid" id="assumption-fields"></div>
             </section>
             <section class="form-panel panel" aria-label="Tax and retirement settings">
@@ -213,15 +213,12 @@
             </section>
             <section class="panel table-panel other-assets-panel" aria-label="Other assets">
               <div class="table-header">
-                <div>
-                  <span class="panel-label">Other assets</span>
-                  <p>Real estate is shown separately from the retirement portfolio.</p>
-                </div>
                 <div class="metric-label-row has-help">
+                  <span class="panel-label">Other assets</span>
                   <button class="info-button metric-help-button" id="other-assets-help-button" type="button" data-help-target="other-assets-help" aria-expanded="false" aria-controls="other-assets-help" aria-label="About Other Assets">i</button>
                   <div class="metric-help" id="other-assets-help" role="tooltip" data-help-button-id="other-assets-help-button" hidden>
                     <strong>Other Assets</strong>
-                    <p>Assets included in total assets but not currently modeled as retirement income or available funds within WealthMap projections.</p>
+                    <p>Real estate is shown separately from the retirement portfolio.</p>
                   </div>
                 </div>
               </div>
@@ -238,33 +235,96 @@
               <div><span class="eyebrow">THE ENGINE OF THE PLAN</span><h2 id="cashflow-heading">Income &amp; Expenses</h2><p>See what your current earnings and spending make possible.</p></div>
             </div>
             <div class="cashflow-layout">
-              <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div><span class="panel-label">Income</span><p>Current annual income before taxes.</p></div></div><div class="form-grid" id="income-fields"></div></section>
-              <section class="panel form-panel" aria-label="Expenses"><div class="section-heading"><div><span class="panel-label">Expenses</span><p>Plan inputs that determine the annual surplus.</p></div></div><div class="form-grid" id="expense-fields"></div></section>
+              <section class="panel form-panel" aria-label="Income"><div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Income</span><button class="info-button metric-help-button" id="income-help-button" type="button" data-help-target="income-help" aria-expanded="false" aria-controls="income-help" aria-label="About Income">i</button><div class="metric-help" id="income-help" role="tooltip" data-help-button-id="income-help-button" hidden><strong>Income</strong><p>Annual income used for retirement planning calculations, including salary and any additional recurring income.</p></div></div></div><div class="form-grid" id="income-fields"></div></section>
+              <section class="panel form-panel" aria-label="Expenses"><div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Expenses</span><button class="info-button metric-help-button" id="expenses-help-button" type="button" data-help-target="expenses-help" aria-expanded="false" aria-controls="expenses-help" aria-label="About Expenses">i</button><div class="metric-help" id="expenses-help" role="tooltip" data-help-button-id="expenses-help-button" hidden><strong>Expenses</strong><p>Current and retirement spending assumptions used throughout readiness, savings, and retirement projections.</p></div></div></div><div class="form-grid" id="expense-fields"></div></section>
             </div>
-            <section class="panel form-panel" aria-label="Contribution rates">
-              <div class="section-heading"><div><span class="panel-label">Contribution rates</span><p>Employer match = employee 401(k) contribution × match rate, capped at the selected percentage of salary.</p></div></div>
+            <section class="panel form-panel" aria-label="Savings Strategy">
+              <div class="section-heading"><div class="metric-label-row has-help"><span class="panel-label">Savings Strategy</span><button class="info-button metric-help-button" id="savings-strategy-help-button" type="button" data-help-target="savings-strategy-help" aria-expanded="false" aria-controls="savings-strategy-help" aria-label="About Savings Strategy">i</button><div class="metric-help" id="savings-strategy-help" role="tooltip" data-help-button-id="savings-strategy-help-button" hidden><strong>Savings Strategy</strong><p>Controls how income is allocated toward retirement accounts, employer-sponsored plans, brokerage investments, and cash savings.</p><p>Changes made here directly affect retirement projections, readiness calculations, and long-term wealth accumulation.</p></div></div></div>
               <div class="contribution-group">
                 <h3 class="contribution-group-heading">Employer-sponsored</h3>
                 <div class="form-grid" id="contribution-fields-employer"></div>
               </div>
               <div class="contribution-group">
-                <h3 class="contribution-group-heading">IRA contributions</h3>
-                <p class="contribution-group-note">Enter a fixed annual dollar amount for each IRA. Traditional IRA contributions remain pre-tax; Roth IRA contributions remain after-tax.</p>
+                <div class="metric-label-row has-help">
+                  <h3 class="contribution-group-heading">IRA contributions</h3>
+                  <button class="info-button metric-help-button" id="ira-contributions-help-button" type="button" data-help-target="ira-contributions-help" aria-expanded="false" aria-controls="ira-contributions-help" aria-label="About IRA Contributions">i</button>
+                  <div class="metric-help" id="ira-contributions-help" role="tooltip" data-help-button-id="ira-contributions-help-button" hidden>
+                    <strong>IRA Contributions</strong>
+                    <p>Enter your planned annual IRA contributions.</p>
+                    <p>Traditional IRA contributions are modeled as pre-tax savings. Roth IRA contributions are modeled as after-tax savings.</p>
+                  </div>
+                </div>
                 <div class="form-grid" id="contribution-fields-ira"></div>
               </div>
               <div class="contribution-group">
-                <h3 class="contribution-group-heading">Available savings allocation</h3>
-                <p class="contribution-group-note">Splits Available Annual Savings (<strong id="available-annual-savings">$0</strong> after taxes, current expenses, and the Roth IRA contribution) between a taxable brokerage account and cash: Brokerage <strong id="brokerage-contribution-amount">$0</strong> · Cash <strong id="cash-contribution-amount">$0</strong>.</p>
+                  <div class="metric-label-row has-help">
+                    <h3 class="contribution-group-heading">Additional Annual Savings</h3>
+                    <button class="info-button metric-help-button" id="additional-annual-savings-help-button" type="button" data-help-target="additional-annual-savings-help" aria-expanded="false" aria-controls="additional-annual-savings-help" aria-label="About Additional Annual Savings">i</button>
+                    <div class="metric-help" id="additional-annual-savings-help" role="tooltip" data-help-button-id="additional-annual-savings-help-button" hidden>
+                      <strong>Additional Annual Savings</strong>
+                      <p>Money remaining after estimated taxes, current expenses, and retirement account contributions. WealthMap allocates this amount between Brokerage and Cash based on your selected percentages.</p>
+                    </div>
+                  </div>
+                  <p class="contribution-group-note additional-savings-summary"><span>Additional Annual Savings: <strong id="available-annual-savings">$0</strong></span><span>Brokerage: <strong id="brokerage-contribution-amount">$0</strong> • Cash: <strong id="cash-contribution-amount">$0</strong></span></p>
                 <div class="form-grid" id="contribution-fields-additional"></div>
               </div>
             </section>
             <div class="summary-strip">
               <div><span>Gross annual income</span><strong id="total-income">$0</strong></div>
-              <div><span>After-tax annual surplus</span><strong id="annual-surplus">$0</strong></div>
-              <div><span>Annual savings rate</span><strong id="savings-rate">0%</strong></div>
-              <div><span>Employee annual savings</span><strong id="employee-savings">$0</strong></div>
-              <div><span>Employer 401(k) match</span><strong id="employer-match">$0</strong></div>
-              <div><span>Total retirement contributions</span><strong id="retirement-contributions">$0</strong></div>
+              <div>
+                <div class="metric-label-row has-help">After-tax income<button class="info-button metric-help-button" id="after-tax-income-help-button" type="button" data-help-target="after-tax-income-help" aria-expanded="false" aria-controls="after-tax-income-help" aria-label="About After-Tax Income">i</button>
+                  <div class="metric-help" id="after-tax-income-help" role="tooltip" data-help-button-id="after-tax-income-help-button" hidden>
+                    <strong>After-Tax Income</strong>
+                    <p>Estimated income remaining after federal taxes, state taxes, and pre-tax retirement contributions.</p>
+                    <p>This amount is used to fund current expenses, Roth IRA contributions, and Additional Annual Savings.</p>
+                    <p>This is a planning estimate based on the tax assumptions configured in your plan.</p>
+                  </div>
+                </div>
+                <strong id="after-tax-income">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Total Retirement Contributions<button class="info-button metric-help-button" id="total-retirement-contributions-help-button" type="button" data-help-target="total-retirement-contributions-help" aria-expanded="false" aria-controls="total-retirement-contributions-help" aria-label="About Total Retirement Contributions">i</button>
+                  <div class="metric-help" id="total-retirement-contributions-help" role="tooltip" data-help-button-id="total-retirement-contributions-help-button" hidden>
+                    <strong>Total Retirement Contributions</strong>
+                    <p>The total amount contributed each year to retirement accounts, including employee contributions and employer matching contributions.</p>
+                    <p>This includes:</p>
+                    <ul><li>401(k) Contributions</li><li>Traditional IRA Contributions</li><li>Roth IRA Contributions</li><li>Employer Match</li></ul>
+                    <p>These contributions are intended to support your long-term retirement goals.</p>
+                  </div>
+                </div>
+                <strong id="retirement-contributions">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Additional Annual Savings<button class="info-button metric-help-button" id="additional-annual-savings-summary-help-button" type="button" data-help-target="additional-annual-savings-summary-help" aria-expanded="false" aria-controls="additional-annual-savings-summary-help" aria-label="About Additional Annual Savings">i</button>
+                  <div class="metric-help" id="additional-annual-savings-summary-help" role="tooltip" data-help-button-id="additional-annual-savings-summary-help-button" hidden>
+                    <strong>Additional Annual Savings</strong>
+                    <p>Money remaining after estimated taxes, current expenses, and retirement account contributions.</p>
+                    <p>WealthMap allocates this amount between Brokerage and Cash based on your selected allocation percentages.</p>
+                    <p>Additional Annual Savings represents non-retirement savings that remain available outside retirement accounts.</p>
+                  </div>
+                </div>
+                <strong id="available-annual-savings-summary">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Total Annual Savings<button class="info-button metric-help-button" id="total-annual-savings-help-button" type="button" data-help-target="total-annual-savings-help" aria-expanded="false" aria-controls="total-annual-savings-help" aria-label="About Total Annual Savings">i</button>
+                  <div class="metric-help" id="total-annual-savings-help" role="tooltip" data-help-button-id="total-annual-savings-help-button" hidden>
+                    <strong>Total Annual Savings</strong>
+                    <p>The total amount saved each year across retirement accounts, employer matching contributions, brokerage investments, and cash savings.</p>
+                    <p>This includes 401(k), Traditional IRA, Roth IRA, Employer Match, Brokerage Contributions, and Cash Contributions.</p>
+                    <p>This metric helps you understand how much of your annual income is being directed toward your long-term financial goals.</p>
+                  </div>
+                </div>
+                <strong id="total-annual-savings">$0</strong>
+              </div>
+              <div>
+                <div class="metric-label-row has-help">Annual Savings Rate<button class="info-button metric-help-button" id="annual-savings-rate-help-button" type="button" data-help-target="annual-savings-rate-help" aria-expanded="false" aria-controls="annual-savings-rate-help" aria-label="About Annual Savings Rate">i</button>
+                  <div class="metric-help" id="annual-savings-rate-help" role="tooltip" data-help-button-id="annual-savings-rate-help-button" hidden>
+                    <strong>Annual Savings Rate</strong>
+                    <p>Your retirement account contributions and Additional Annual Savings, divided by gross annual income. WealthMap uses 20% as its savings-rate benchmark for retirement readiness.</p>
+                  </div>
+                </div>
+                <strong id="savings-rate">0%</strong>
+              </div>
             </div>
           </section>
 

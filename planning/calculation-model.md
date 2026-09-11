@@ -2,7 +2,7 @@
 
 ## Purpose and boundary
 
-Wealth Map is an educational retirement-readiness prototype. Every amount is a deterministic estimate from the editable client-side profile. It is not tax software, a retirement plan, a forecast of investment performance, or financial, tax, or legal advice.
+Wealth Map is an educational retirement-readiness application. Every amount is a deterministic estimate from the editable working plan loaded through the application service. It is not tax software, a retirement plan, a forecast of investment performance, or financial, tax, or legal advice.
 
 The model uses real dollars. The entered expected return is nominal and is converted before projection:
 
@@ -10,7 +10,7 @@ The model uses real dollars. The entered expected return is nominal and is conve
 real return = (1 + nominal return) / (1 + inflation rate) - 1
 ```
 
-The retirement spending goal is not inflated again. The prototype does not offer a nominal-dollar projection.
+The retirement spending goal is not inflated again. The application does not offer a nominal-dollar projection.
 
 ## Current cash flow
 
@@ -163,4 +163,4 @@ The app returns at most three recommendations, evaluated in this order: the weal
 
 ## Exclusions
 
-The model excludes payroll taxes, itemized deductions, credits, capital-gains holding-period treatment, tax-law changes, inflation-indexed brackets, IRS contribution limits, eligibility checks, employer-match vesting, salary growth, employer-match changes, Social Security claiming optimization, full RMD cash-flow treatment beyond the illustrative divisor table, Monte Carlo simulation, and estate planning. The workbook in this repository is never read or modified at runtime.
+The model excludes payroll taxes, itemized deductions, credits, capital-gains holding-period treatment, tax-law changes, inflation-indexed brackets, IRS contribution limits, eligibility checks, employer-match vesting, salary growth, employer-match changes, Social Security claiming optimization, full RMD cash-flow treatment beyond the illustrative divisor table, Monte Carlo simulation, and estate planning. These boundaries keep the model deterministic and transparent for the current release.

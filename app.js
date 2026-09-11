@@ -181,18 +181,6 @@ function contributionRate(profile, key) {
   return Math.min(1, Math.max(0, numberValue(profile.contributionRates[key])));
 }
 
-// Current illustrative IRS annual IRA contribution limits, used only by the optional "Use IRS
-// max" convenience shortcut; they populate the annual contribution fields rather than driving
-// any separate contribution logic.
-const IRA_CONTRIBUTION_LIMIT_UNDER_50 = 7000;
-const IRA_CONTRIBUTION_LIMIT_50_PLUS = 8000;
-
-function iraContributionLimit(age) {
-  return numberValue(age) >= 50
-    ? IRA_CONTRIBUTION_LIMIT_50_PLUS
-    : IRA_CONTRIBUTION_LIMIT_UNDER_50;
-}
-
 function iraContributionAmount(profile, key) {
   const source = profile.iraContributions;
   return Math.max(0, numberValue(source ? source[key] : 0));
@@ -360,6 +348,9 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
   );
   const employeeSavings =
     employeePreTaxContributions + employeePostTaxContributions;
+  const totalRetirementContributions =
+    employeeFourOhOneK + traditionalIra + rothIra + employerFourOhOneKMatch;
+  const totalAnnualSavings = totalRetirementContributions + brokerage + cash;
 
   return {
     earnedIncome,
@@ -377,7 +368,8 @@ function calculateContributions(profile, salaryOverride, otherIncomeOverride) {
     employeePostTaxContributions,
     employeeSavings,
     employerFourOhOneKMatch,
-    totalRetirementContributions: employeeSavings + employerFourOhOneKMatch,
+    totalRetirementContributions,
+    totalAnnualSavings,
   };
 }
 
@@ -776,6 +768,7 @@ function calculate(rawProfile) {
     employeeSavings: contributions.employeeSavings,
     employerFourOhOneKMatch: contributions.employerFourOhOneKMatch,
     totalRetirementContributions: contributions.totalRetirementContributions,
+    totalAnnualSavings: contributions.totalAnnualSavings,
     yearsToTarget,
     projectedAssets,
     requiredAssets,
@@ -1570,8 +1563,6 @@ function inputConfig() {
         "currency",
         "per year, pre-tax",
         3000,
-        undefined,
-        "traditional",
       ],
       [
         "iraContributions.rothIraAnnual",
@@ -1579,8 +1570,6 @@ function inputConfig() {
         "currency",
         "per year, after-tax",
         6000,
-        undefined,
-        "roth",
       ],
     ],
     contributionsAdditional: [
@@ -1588,14 +1577,14 @@ function inputConfig() {
         "savingsAllocation.brokerage",
         "Brokerage Allocation %",
         "percent",
-        "% of available annual savings",
+        "% of Additional Annual Savings",
         75,
       ],
       [
         "savingsAllocation.cash",
         "Cash Allocation %",
         "percent",
-        "% of available annual savings",
+        "% of Additional Annual Savings",
         25,
       ],
     ],
@@ -1639,11 +1628,11 @@ const PLAN_SETUP_FIELD_HELP = {
   },
   "savingsAllocation.brokerage": {
     title: "Brokerage Allocation %",
-    text: "Percentage of available annual savings allocated to a taxable brokerage account after taxes and living expenses.",
+    text: "Percentage of Additional Annual Savings allocated to a taxable brokerage account.",
   },
   "savingsAllocation.cash": {
     title: "Cash Allocation %",
-    text: "Percentage of available annual savings allocated to cash reserves after taxes and living expenses.",
+    text: "Percentage of Additional Annual Savings allocated to cash reserves.",
   },
   cashReserveTargetYears: {
     title: "Cash Reserve (Years of Spending)",
@@ -1676,7 +1665,7 @@ const PLAN_SETUP_FIELD_HELP = {
 };
 
 function createField(config) {
-  const [key, label, type, unit, fallback, options, iraMaxKind] = config;
+  const [key, label, type, unit, fallback, options] = config;
   const value = key
     .split(".")
     .reduce((currentValue, path) => currentValue?.[path], workingProfile);
@@ -1769,15 +1758,6 @@ function createField(config) {
   const unitEl = document.createElement("small");
   unitEl.textContent = unit || "Edit to recalculate";
   wrapper.append(labelRow, control, unitEl, messageEl);
-  if (iraMaxKind) {
-    const limit = iraContributionLimit(workingProfile.currentAge);
-    const maxButton = document.createElement("button");
-    maxButton.type = "button";
-    maxButton.className = "button button-quiet field-max-button";
-    maxButton.dataset.maxField = key;
-    maxButton.textContent = `Use current IRS max (${money(limit)})`;
-    wrapper.append(maxButton);
-  }
 
   if (key === "socialSecurityEstimatedBenefit") {
     const isAuto =
@@ -1816,16 +1796,6 @@ function updateSocialSecurityBenefitFieldVisibility() {
     manualWrapper.hidden = isAuto;
     manualWrapper.style.display = isAuto ? "none" : "";
   }
-}
-
-function handleMaxContributionClick(event) {
-  const button = event.target.closest("[data-max-field]");
-  if (!button) return;
-  const field = button.dataset.maxField;
-  const limit = iraContributionLimit(workingProfile.currentAge);
-  const input = document.querySelector(`[data-field="${field}"]`);
-  if (input) input.value = limit;
-  updateWorkingValue(field, String(limit), "currency");
 }
 
 function fieldValidationMessage(field, state) {
@@ -2552,14 +2522,17 @@ function renderMetrics() {
   setText("#financial-assets-total", money(metrics.financialAssets));
   setText("#total-assets", money(metrics.totalAssets));
   setText("#total-income", money(metrics.totalIncome));
-  setText("#annual-surplus", money(metrics.surplus));
+  setText("#after-tax-income", money(metrics.afterTaxIncome));
   setText("#savings-rate", percent(metrics.savingsRate));
-  setText("#employee-savings", money(metrics.employeeSavings));
-  setText("#employer-match", money(metrics.employerFourOhOneKMatch));
   setText(
     "#retirement-contributions",
     money(metrics.totalRetirementContributions),
   );
+  setText(
+    "#available-annual-savings-summary",
+    money(metrics.availableAnnualSavings),
+  );
+  setText("#total-annual-savings", money(metrics.totalAnnualSavings));
   setText("#available-annual-savings", money(metrics.availableAnnualSavings));
   setText(
     "#brokerage-contribution-amount",
@@ -2767,7 +2740,6 @@ function init() {
     item.addEventListener("click", () => showPage(item.dataset.page)),
   );
   $("#reset-button").addEventListener("click", resetSample);
-  document.addEventListener("click", handleMaxContributionClick);
   $("#advanced-tax-toggle").addEventListener(
     "click",
     toggleAdvancedTaxSettings,

@@ -1,4 +1,4 @@
-# Wealth Map Prototype Product Requirements Document
+# Wealth Map Product Requirements Document
 
 ## 1. Product Overview
 
@@ -8,15 +8,15 @@ Wealth Map
 
 ### Purpose
 
-Wealth Map is a client-side retirement-planning prototype that helps people understand whether they are on track to retire, identify their projected funding gap, estimate when they may be able to retire, and decide what actions to take today.
+Wealth Map is a retirement-planning application with a browser-based planning experience and persisted plan data. It helps people understand whether they are on track to retire, identify their projected funding gap, estimate when they may be able to retire, and decide what actions to take today.
 
 The product is an educational decision-support tool, not a net-worth tracker or financial-advice service. It should give users useful answers quickly rather than require them to build a complex financial plan.
 
 ### Research foundation and product vision
 
-The included repository files `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` are the research foundation for the longer-term product. Both are read-only reference artifacts stored alongside the other planning documents. Together they model retirement planning as a timeline of income, spending, account balances, taxes, Roth conversions, Social Security, and required minimum distributions (RMDs). The prototype must not reproduce either workbook's full calculation engine, but its data model and calculation layer should leave room for those capabilities; the Wealth Timeline page and the RMD divisor table, NIIT, and Social Security claiming-age comparison are the first steps in that direction.
+The calculation model and planning documents define the foundation for the product. The application does not reproduce a full tax-planning engine, but its data model and calculation layer leave room for those future capabilities; the Wealth Timeline page and the RMD divisor table, NIIT, and Social Security claiming-age comparison are part of the current release.
 
-The prototype must not require either workbook to be loaded in the browser and must not modify them. P0 calculations use the simplified rules in this PRD. Future tax-aware features may use documented workbook scenarios for validation.
+The current release uses the simplified rules in this PRD. Future tax-aware features should validate documented scenarios against the deterministic calculation model before implementation.
 
 The long-term product should help users answer decision-oriented questions:
 
@@ -39,32 +39,32 @@ Within approximately 60 seconds of reviewing the sample profile, a user should u
 
 ## 2. Goals and Non-Goals
 
-### Prototype goals
+### Product goals
 
-- Demonstrate a coherent retirement-planning workflow.
+- Provide a coherent retirement-planning workflow.
 - Provide six connected pages with simple navigation, including an editable year-by-year wealth timeline.
 - Display a realistic built-in sample dataset.
 - Calculate basic retirement-readiness metrics from the sample data.
 - Show a Retirement Health Score, projected retirement age, and funding gap.
 - Generate understandable, rule-based recommendations.
 - Establish a foundation that can later use more sophisticated planning logic.
-- Make the Retirement Health Score the primary MVP experience, with the other pages supporting that result.
+- Make the Retirement Health Score the primary experience, with the other pages supporting that result.
 - Make every score and recommendation explain which assumptions or metrics produced it.
 
-### Prototype non-goals
+### Product boundaries and future capabilities
 
-- No user authentication or accounts.
-- No backend, database, or server-side processing.
+- The first release requires an application service, authenticated plan ownership, and a database-backed persistence layer.
+- Server-side validation and authorization must protect saved plans; browser state is a working copy, not the system of record.
 - No real financial-account aggregation.
 - No external APIs or live market data.
-- No production-grade tax calculations; P0 uses simplified illustrative estimates.
-- No full Roth-conversion optimization model; P0 supports an editable annual conversion assumption.
-- No Social Security optimization engine; P0 estimates taxable benefits from an editable benefit input and shows an illustrative, single-filer claiming-age comparison (ages 62-70) for reference only.
-- No RMD alerting engine; P0 estimates an RMD amount using an illustrative IRS Uniform Lifetime Table divisor once the modeled age reaches the RMD start age.
+- Tax calculations are simplified illustrative estimates rather than production tax software.
+- The application supports an editable annual Roth-conversion assumption; full Roth-conversion optimization is a future capability.
+- The application estimates taxable benefits from an editable benefit input and shows an illustrative, single-filer claiming-age comparison (ages 62-70); Social Security optimization is a future capability.
+- The application estimates RMD amounts using an illustrative IRS Uniform Lifetime Table divisor; full RMD alerting is a future capability.
 - No Monte Carlo simulation.
 - No estate-planning functionality.
 - No claim that results are personalized financial advice.
-- No claim that the prototype produces official federal tax, IRMAA, Roth conversion, Social Security, or RMD outcomes.
+- No claim that the application produces official federal tax, IRMAA, Roth conversion, Social Security, or RMD outcomes.
 
 ## 3. Target Audience
 
@@ -126,7 +126,7 @@ Users need to answer questions such as:
 
 **Account classification:** Each account must show a plain-language tax-treatment label:
 
-| Account           | Tax treatment                  | Prototype interpretation                                |
+| Account           | Tax treatment                  | Product interpretation                                  |
 | ----------------- | ------------------------------ | ------------------------------------------------------- |
 | Taxable brokerage | Taxable                        | Flexible withdrawals; gains may be taxable              |
 | 401(k)            | Tax-deferred                   | Future withdrawals may be taxable                       |
@@ -135,9 +135,9 @@ Users need to answer questions such as:
 | Cash              | Liquid                         | Short-term spending reserve                             |
 | Real estate       | Separate asset                 | Not automatically treated as spendable portfolio assets |
 
-The prototype may display educational withdrawal-order context, but must not claim to optimize withdrawal order.
+The application may display educational withdrawal-order context, but must not claim to optimize withdrawal order.
 
-**Prototype behavior:** Load editable values from the shared sample dataset. Changes must update the shared client-side state and all dependent calculations.
+**Product behavior:** Load editable values from the saved plan or shared sample dataset. Changes must update the shared working state, persist through the application service, and update all dependent calculations.
 
 ### 6.2 Assets
 
@@ -155,7 +155,7 @@ The prototype may display educational withdrawal-order context, but must not cla
 - Total assets including real estate
 - Optional net worth value if liabilities are included in the dataset
 
-**Prototype behavior:** Provide editable numeric inputs for each balance. Calculate totals from the current client-side state, not from hard-coded display values. Clearly distinguish account categories because they have different tax treatments.
+**Product behavior:** Provide editable numeric inputs for each balance. Calculate totals from the current working plan, not from hard-coded display values, and persist valid changes through the application service. Clearly distinguish account categories because they have different tax treatments.
 
 ### 6.3 Income & Expenses
 
@@ -171,7 +171,7 @@ The prototype may display educational withdrawal-order context, but must not cla
 - Current savings rate
 - Annual cash flow or surplus
 
-**Prototype behavior:** Provide editable inputs for income, savings, expenses, and retirement spending goal. Calculate savings rate and surplus from the current client-side state. Use clear positive and negative states.
+**Product behavior:** Provide editable inputs for income, savings, expenses, and retirement spending goal. Calculate savings rate and surplus from the current working plan, persist valid changes, and use clear positive and negative states.
 
 ### 6.4 Retirement Readiness
 
@@ -189,9 +189,9 @@ The prototype may display educational withdrawal-order context, but must not cla
 - Safe annual spending estimate that remains sustainable through life expectancy under the shared retirement projection engine
 - A short explanation of the result and its assumptions
 
-**Prototype behavior:** Derive all values from the current shared client-side state and calculation rules. Recalculate after every valid input change. Use a prominent but restrained visual treatment for the score and status.
+**Product behavior:** Derive all values from the current working plan and calculation rules. Recalculate after every valid input change and keep saved plan data consistent with the displayed result. Use a prominent but restrained visual treatment for the score and status.
 
-The Retirement Health Score is the primary MVP output. The page must identify the assumptions that drive it and distinguish projected investable assets from real estate.
+The Retirement Health Score is the primary output. The page must identify the assumptions that drive it and distinguish projected investable assets from real estate.
 
 ### 6.5 Recommendations
 
@@ -204,7 +204,7 @@ The Retirement Health Score is the primary MVP output. The page must identify th
 - The metric or condition that triggered it
 - Optional estimated effect, such as reducing the funding gap or improving projected retirement age
 
-Each recommendation must also include its priority, triggering metric, and a short explanation. An estimated effect may be shown only when the prototype actually calculates it; otherwise label the effect as qualitative.
+Each recommendation must also include its priority, triggering metric, and a short explanation. An estimated effect may be shown only when the application actually calculates it; otherwise label the effect as qualitative.
 
 **Possible recommendation rules:**
 
@@ -214,11 +214,13 @@ Each recommendation must also include its priority, triggering metric, and a sho
 - Recommend delaying Social Security to age 70 as an educational suggestion, without calculating actual benefit values.
 - Recommend reviewing tax diversification when most assets are in tax-deferred accounts.
 
-- Do not present Roth conversion, Social Security, tax, or RMD outputs as official advice. All P0 outputs must be labeled as simplified educational estimates.
+- Do not present Roth conversion, Social Security, tax, or RMD outputs as official advice. All such outputs must be labeled as simplified educational estimates.
 
-Recommendations must be labeled as educational prototype suggestions, not financial advice.
+Recommendations must be labeled as educational suggestions, not financial advice.
 
 ### 6.6 Wealth Timeline
+
+The layout and interaction contract for this workbench is defined in [planning/wireframe-timeline.md](wireframe-timeline.md). The Timeline is a first-class planning view and the shared source of truth for annual retirement projection details used by Readiness and Recommendations.
 
 **Purpose:** Let the user see and adjust the model's year-by-year projection so it can be reconciled with their own reality, rather than trusting a single target-age snapshot.
 
@@ -228,7 +230,7 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - A summary of projected assets at life expectancy, the age assets are projected to deplete (if any), and how many years currently have a user override.
 - An editable row for every age, showing the modeled or overridden expected return, income, expenses or spending, one-time withdrawal, contribution or withdrawal amount, RMD, and ending assets for that year.
 
-**Prototype behavior:** Blank fields use the automatically modeled value; a per-year override is layered on top of, and does not replace, the shared profile assumptions. Overrides are cleared by the `Reset sample data` control or a page-level `Reset timeline overrides` control. Income overrides apply only to working years, and expense or one-time withdrawal overrides apply only to retired years, because the underlying engine does not use those values outside that phase. A projected shortfall or IRMAA-triggering year found in the timeline must also surface in the Retirement Health Score and Recommendations, not only on this page.
+**Product behavior:** Blank fields use the automatically modeled value; a per-year override is layered on top of, and does not replace, the shared profile assumptions. Overrides are cleared by the `Reset sample data` control or a page-level `Reset timeline overrides` control. Income overrides apply only to working years, and expense or one-time withdrawal overrides apply only to retired years, because the underlying engine does not use those values outside that phase. A projected shortfall or IRMAA-triggering year found in the timeline must also surface in the Retirement Health Score and Recommendations, not only on this page.
 
 ### Editable input behavior
 
@@ -236,8 +238,8 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - Numeric inputs must reject or safely handle invalid, negative, or out-of-range values according to the field rules.
 - Changes may recalculate on input or on a clearly labeled Apply/Update action, but the interaction must require no page reload.
 - Recalculation must update all affected pages or views, including totals, cash flow, readiness metrics, score, and recommendations.
-- Provide a `Reset sample data` control that restores the original dataset and recalculates the app.
-- The prototype may use in-memory state only. Persistence through `localStorage` is optional and must not be required.
+- Provide a `Reset sample data` control that restores the original dataset and recalculates the app without deleting the user's saved plan.
+- Persist the working plan through the application service. Browser memory or storage may support responsiveness, but must not be the system of record.
 
 ## 7. Navigation Requirements
 
@@ -248,14 +250,14 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - Navigation must work on desktop and mobile layouts.
 - Use vanilla JavaScript for page switching if implementing a single-page app.
 - A multi-page HTML implementation is also acceptable, provided the shared sample data and calculations remain consistent.
-- The preferred prototype approach is a single-page client-side app with six view sections, because it avoids duplicated markup and keeps calculated state consistent.
+- The preferred implementation is a browser application with six view sections backed by a shared application service, because it avoids duplicated markup while keeping saved plan data and calculated state consistent.
 
 ## 8. Functional Requirements
 
 - FR1: The app must use HTML, CSS, and vanilla JavaScript.
-- FR2: The app must run entirely in the browser.
-- FR3: The app must not require a backend, build step, login, or external service.
-- FR4: The app must load a built-in sample dataset when opened.
+- FR2: The app must provide a browser experience backed by the application service.
+- FR3: The first release must provide authenticated access to saved plans through a backend and database.
+- FR4: The app must load a saved plan or built-in sample dataset when opened.
 - FR5: The app must calculate asset totals from individual asset values.
 - FR6: The app must calculate annual savings rate and annual surplus.
 - FR7: The app must calculate a basic retirement projection using the defined assumptions.
@@ -266,27 +268,26 @@ Recommendations must be labeled as educational prototype suggestions, not financ
 - FR12: The app must generate no more than three prioritized recommendations from rule-based conditions.
 - FR13: All pages must use the same underlying dataset and calculations.
 - FR14: The app must display a clear disclaimer that projections are simplified educational estimates.
-- FR15: The app must avoid presenting prototype outputs as guaranteed results or individualized financial advice.
+- FR15: The app must avoid presenting outputs as guaranteed results or individualized financial advice.
 - FR16: The app must classify assets by account type and display their simplified tax treatment.
 - FR17: The app must distinguish investable retirement assets from real estate in readiness calculations.
 - FR18: The app must identify the assumptions contributing to the Retirement Health Score.
 - FR19: Each recommendation must show its trigger, priority, and rationale.
 - FR20: The calculation layer must be separate from rendering and navigation so future scenario calculations can be added without rewriting page markup.
-- FR21: The prototype must visibly label tax, Roth conversion, Social Security, IRMAA, and RMD calculations as unavailable or simplified when they are not implemented.
-- FR21: The prototype must visibly label tax, Roth conversion, Social Security, IRMAA, and RMD calculations as simplified illustrative estimates.
-- FR22: The prototype must provide editable controls for all core profile, asset, income, expense, and projection-assumption fields.
-- FR23: Valid input changes must update the shared client-side state without a page reload.
+- FR21: The app must visibly label tax, Roth conversion, Social Security, IRMAA, and RMD calculations as simplified illustrative estimates.
+- FR22: The app must provide editable controls for all core profile, asset, income, expense, and projection-assumption fields.
+- FR23: Valid input changes must update the shared working state, persist through the application service, and update dependent views without a page reload.
 - FR24: Every derived value must be recalculated from the current state after an edit, including asset totals, savings rate, surplus, projected assets, funding gap, expected retirement age, score, and recommendations.
-- FR25: The prototype must provide a reset control that restores the original sample dataset.
+- FR25: The app must provide a reset control that restores the original sample dataset.
 - FR26: Invalid or out-of-range input must produce an understandable validation state and must not produce broken, misleading, or `NaN` output.
-- FR27: The prototype must provide editable assumptions for federal standard deduction, state income tax rate, taxable gains tax rate, pre-tax withdrawal tax rate, annual Roth conversion, Social Security benefit mode and taxable percentage, RMD start age, NIIT MAGI threshold, Cash Reserve (Years of Spending) (how many years of retirement spending the model attempts to maintain in cash), and IRMAA threshold and surcharge.
-- FR28: The prototype must apply a simplified progressive federal bracket calculation and show its assumptions without representing it as official tax software.
-- FR29: The prototype must include simplified tax effects in projected after-tax assets and retirement spending needs.
-- FR30: The prototype must provide an editable year-by-year wealth timeline from the current age through life expectancy, allowing per-year overrides that fall back to the modeled value when left blank.
-- FR31: The prototype must estimate RMDs using an age-indexed divisor table rather than a single flat rate.
-- FR32: The prototype must show an illustrative, read-only Social Security claiming-age comparison and must not present it as claiming optimization.
-- FR33: The prototype must provide an editable Social Security claim age (62-70, default 67, editable on Plan Setup next to the benefit mode) that adjusts the modeled benefit using the same claiming-schedule methodology as FR32, and that determines the age at which modeled Social Security income, taxation, and withdrawal offsets begin in the Timeline, Readiness, and Recommendations. A profile without a stored claim age must default to 67 without user action.
-- FR34: The prototype must default new plans to an automatically estimated Social Security benefit at Full Retirement Age based on current earnings, while providing an editable manual entry mode to allow users to supply values from their official Social Security statement.
+- FR27: The app must provide editable assumptions for federal standard deduction, state income tax rate, taxable gains tax rate, pre-tax withdrawal tax rate, annual Roth conversion, Social Security benefit mode and taxable percentage, RMD start age, NIIT MAGI threshold, Cash Reserve (Years of Spending) (how many years of retirement spending the model attempts to maintain in cash), and IRMAA threshold and surcharge.
+- FR28: The app must apply a simplified progressive federal bracket calculation and show its assumptions without representing it as official tax software.
+- FR29: The app must include simplified tax effects in projected after-tax assets and retirement spending needs.
+- FR30: The app must provide an editable year-by-year wealth timeline from the current age through life expectancy, allowing per-year overrides that fall back to the modeled value when left blank.
+- FR31: The app must estimate RMDs using an age-indexed divisor table rather than a single flat rate.
+- FR32: The app must show an illustrative, read-only Social Security claiming-age comparison and must not present it as claiming optimization.
+- FR33: The app must provide an editable Social Security claim age (62-70, default 67, editable on Plan Setup next to the benefit mode) that adjusts the modeled benefit using the same claiming-schedule methodology as FR32, and that determines the age at which modeled Social Security income, taxation, and withdrawal offsets begin in the Timeline, Readiness, and Recommendations. A profile without a stored claim age must default to 67 without user action.
+- FR34: The app must default new plans to an automatically estimated Social Security benefit at Full Retirement Age based on current earnings, while providing an editable manual entry mode to allow users to supply values from their official Social Security statement.
 
 ## 9. Sample Data Model
 
@@ -341,7 +342,7 @@ The exact sample values may be adjusted by the implementation agent, but the dat
 
 ## 10. Calculation Rules
 
-Use simplified, transparent calculations suitable for a prototype. Keep calculation functions separate from rendering functions.
+Use simplified, transparent calculations suitable for an educational planning application. Keep calculation functions separate from rendering functions.
 
 ### Asset totals
 
@@ -373,7 +374,7 @@ Use simplified, transparent calculations suitable for a prototype. Keep calculat
 - For the sample data above, a 4% safe withdrawal rate implies a target equal to 25 times annual retirement spending.
 
 - If `projectionBasis` is `real_dollars`, treat the return assumption as a real return and do not inflate the spending goal again.
-- If the implementation uses nominal dollars instead, inflate the retirement spending goal by the inflation rate through the target retirement year and label all projected values as nominal. The prototype must use one basis consistently.
+- If the implementation uses nominal dollars instead, inflate the retirement spending goal by the inflation rate through the target retirement year and label all projected values as nominal. The app must use one basis consistently.
 
 ### Projection
 
@@ -437,29 +438,28 @@ The full RMD divisor table, NIIT surtax, wealth-timeline accumulation/decumulati
 - Avoid charts that require external libraries; simple bars, progress indicators, or CSS visualizations are sufficient.
 - Ensure all important information remains accessible without relying on color alone.
 - Use semantic HTML and accessible labels, headings, focus states, and keyboard-operable navigation.
-- Show unavailable future calculations with an explicit state such as `Not modeled in prototype`, rather than displaying invented values.
+- Show unavailable future calculations with an explicit state such as `Not currently modeled`, rather than displaying invented values.
 
 ## 12. Technical Requirements
 
 - Use HTML5, CSS3, and modern vanilla JavaScript.
-- Keep the app client-side and static-hosting compatible.
-- The app must be deployable to GitHub Pages.
-- Do not use a framework, backend, database, or account aggregation service.
-- Do not require a package manager or build process for the prototype.
+- Keep the browser experience focused and accessible, with the application service responsible for persistence and server-side validation.
+- The first release must be deployable with an application service and database; static hosting alone is insufficient for the released product.
+- Do not add account aggregation or live financial APIs without updating the product requirements and deployment plan.
+- Use a maintainable build and deployment process appropriate for the selected application service and database.
 - Keep data, calculations, rendering, navigation, and styling organized into understandable files.
-- Define calculation functions with stable, testable inputs and outputs so they can later be compared with workbook scenarios.
+- Define calculation functions with stable, testable inputs and outputs so future scenario validations can be added without changing the user-facing contract.
 - Keep the original sample dataset immutable and maintain a separate working state for user edits.
 - Use a single update path for input changes: validate input, update working state, recalculate derived values, then render dependent views.
 - Do not duplicate editable values or calculated results across page markup.
 - Format currency and percentages using JavaScript formatting utilities.
 - Avoid hard-coding calculated results into page markup.
 - Handle missing, zero, and invalid numeric values without breaking the UI.
-- Include a README with local run instructions and a short explanation of the prototype assumptions.
-- Treat `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` as read-only research and validation references, not as runtime dependencies.
+- Include a README with local run instructions and a short explanation of the application assumptions.
 
 ## 13. Expected Deliverables
 
-Create a static web app with a structure similar to:
+Create a browser application and supporting application service with a structure similar to:
 
 ```text
 index.html
@@ -467,6 +467,8 @@ styles.css
 app.js
 data.js             (optional)
 README.md
+server/              (application service)
+database/            (schema and migrations)
 planning/wireframe-navigation.md
 planning/wireframe-profile.md
 planning/wireframe-assets.md
@@ -475,7 +477,7 @@ planning/wireframe-retirement-readiness.md
 planning/wireframe-recommendations.md
 ```
 
-The app may use additional files if they improve clarity, but it must remain simple to run locally by opening `index.html` or serving the folder with a basic static server.
+The app may use additional files if they improve clarity. Local development must run the browser application together with the application service and a development database or documented database substitute.
 
 ## 14. Acceptance Criteria
 
@@ -496,10 +498,10 @@ The app may use additional files if they improve clarity, but it must remain sim
 - Recommendations are generated from the sample data and limited to the top three.
 - The app includes a clear educational disclaimer.
 - The layout is usable on desktop and mobile widths.
-- The app works without a backend, login, external API, or build step.
-- The app can be hosted on GitHub Pages.
-- The README explains how to run the prototype and describes the simplified calculations.
-- The README identifies which workbook concepts are implemented, simplified, or deferred.
+- The first release works with authenticated access, a backend application service, and a database.
+- The browser experience can be deployed alongside the application service through the release deployment process.
+- The README explains how to run the application and describes the simplified calculations.
+- The README identifies which planning concepts are implemented, simplified, or future capabilities.
 - The app does not describe the Retirement Health Score as a probability of retirement success.
 - Each recommendation displays why it was generated.
 - Investable assets and real estate are visibly distinguished.
@@ -514,7 +516,7 @@ The app may use additional files if they improve clarity, but it must remain sim
 
 ## 15. Future Enhancements
 
-### Phase 1: Prototype / P0
+### Current release and future roadmap
 
 - Scenario comparison using the same transparent projection functions. The Wealth Timeline's per-year overrides partially address this for a single scenario; named, side-by-side scenario comparison remains future work.
 - Optional local storage persistence.
@@ -523,33 +525,25 @@ The app may use additional files if they improve clarity, but it must remain sim
 
 - Roth conversion modes: Base, Suggested, and Aggressive.
 - Basic federal tax projections.
-- Social Security claiming optimization beyond the illustrative, single-filer claiming-age comparison already implemented in P0.
+- Social Security claiming optimization beyond the illustrative, single-filer claiming-age comparison already implemented in the current release.
 - Withdrawal-order analysis beyond the fixed cash → brokerage → pre-tax → Roth order already used by the wealth timeline.
-- Validation against documented workbook scenarios.
+- Validation against additional documented scenarios.
 
 ### Phase 3: Advanced planning / P2
 
 - Monte Carlo simulation.
 - Account aggregation.
-- RMD alerting and more complete RMD cash-flow treatment beyond the illustrative divisor-table estimate already implemented in P0.
+- RMD alerting and more complete RMD cash-flow treatment beyond the illustrative divisor-table estimate already implemented in the current release.
 - More detailed scenario comparisons.
 - Estate-planning features.
 
 ## 16. Model Validation Requirements
 
 - Create a small set of documented input scenarios and expected outputs before implementing tax-aware features.
-- Compare future tax, Roth conversion, Social Security, and RMD results against selected workbook outputs.
-- Record which workbook assumptions are supported, simplified, or intentionally excluded.
-- Keep `planning/Wealth_Statement.xlsx` and `planning/Retirement_Calculator.xlsx` unchanged when building or running the prototype; both are read-only research and validation references, never loaded at runtime.
-- Do not import workbook formulas into the prototype without first defining their inputs, outputs, units, and edge-case behavior.
+- Compare future tax, Roth conversion, Social Security, and RMD results against documented reference scenarios.
+- Record which planning assumptions are supported, simplified, or intentionally excluded.
 - Treat ending account balances as incomplete measures of household wealth when modeled RMD cash has left the tracked accounts.
-
-### Cross-checked against `planning/Retirement_Calculator.xlsx`
-
-- The RMD divisor table (ages 72-95) was copied directly from that workbook's Assumptions sheet and matches for the overlapping age range; ages 96-100 and beyond extend the same IRS Uniform Lifetime Table pattern and are not present in the workbook.
-- The Social Security early-claim reduction (5/9% per month for the first 36 months, 5/12% per month beyond that) and delayed-claim credit (2/3% per month, 8% per year) match the constants embedded in that workbook's Social Security sheet formulas.
-- Known differences: the workbook models a married couple with spousal Social Security benefits and exact claim dates; the prototype models a single benefit input and whole-year ages only. The workbook's brokerage tax formula stacks ordinary income and long-term capital gains through real IRS brackets plus NIIT; the prototype uses an editable flat taxable-gains rate plus the same NIIT rule, not full bracket stacking. The workbook's cash-reserve rule tops up a fixed target every year; the prototype's cash-reserve buffer only refills from brokerage in a positive-return year, to more directly illustrate sequence-of-returns risk.
 
 ## 17. Product and Financial Disclaimer
 
-Wealth Map is an educational prototype. Its projections use simplified assumptions and are not guarantees of investment performance, retirement success, tax outcomes, or Social Security benefits. The app does not provide financial, tax, or legal advice. Users should consult qualified professionals before making financial decisions.
+Wealth Map is an educational retirement-planning application. Its projections use simplified assumptions and are not guarantees of investment performance, retirement success, tax outcomes, or Social Security benefits. The app does not provide financial, tax, or legal advice. Users should consult qualified professionals before making financial decisions.

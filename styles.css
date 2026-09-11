@@ -134,8 +134,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .contribution-group { margin-bottom: 22px; }
 .contribution-group:last-child { margin-bottom: 0; }
 .contribution-group-heading { margin: 0 0 6px; font: 12px Arial, sans-serif; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+.contribution-group > .metric-label-row { margin-bottom: 6px; }
+.contribution-group > .metric-label-row .contribution-group-heading { margin-bottom: 0; }
 .contribution-group-note { margin: 0 0 14px; color: var(--ink-soft); font: 12px/1.5 Arial, sans-serif; }
-.field-max-button { margin-top: 4px; font-size: 11px; padding: 6px 10px; align-self: start; }
+.additional-savings-summary { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .validation-standby { margin: 0 0 18px; padding: 12px 14px; border-left: 4px solid var(--blue); background: var(--blue-soft); color: var(--ink); font: 12px Arial, sans-serif; }
 .asset-table { display: grid; }
 .asset-summary { padding: 22px 26px; margin-bottom: 14px; border-top: 4px solid var(--blue); }
